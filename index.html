@@ -152,6 +152,16 @@ button{font:inherit;color:inherit}
 .rsv small{color:var(--muted);font-size:12px}
 .rsv button{border:1.5px solid var(--danger);background:transparent;color:var(--danger);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 .loading{color:var(--muted);text-align:center;padding:30px 0;font-size:14px}
+.refask{display:grid;gap:8px;background:var(--mark-soft);color:var(--mark-ink);border-radius:16px;padding:14px 16px;margin-top:14px}
+.refask b{font-size:15px}
+.refask small{font-size:12px}
+.refask .cta{background:var(--surface);color:var(--ok);border:1.5px solid var(--accent);padding:10px 18px;font-size:14px}
+.levels{display:grid;gap:6px}
+.levels label{position:relative;cursor:pointer}
+.levels input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.levels span{display:block;border:1px solid var(--line);border-radius:12px;padding:9px 14px;font-size:14px;background:var(--bg)}
+.levels input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.levels input:focus-visible+span{outline:3px solid var(--star);outline-offset:2px}
 @media (max-width:380px){ .kinds{grid-template-columns:1fr} .chips{gap:4px} .chip .t{font-size:14px} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -172,6 +182,7 @@ button{font:inherit;color:inherit}
     </header>
     <div class="me" id="me" hidden><span id="meText"></span><button class="linkbtn" type="button" id="toMine">予約の確認<span class="n" id="mineN" hidden></span></button></div>
     <div class="notice" id="notice" hidden></div>
+    <div class="refask" id="refAsk" hidden></div>
 
     <div class="step"><span class="no">01</span><h2>使い方を選ぶ</h2></div>
     <div class="kinds" role="radiogroup" aria-label="使い方">
@@ -189,12 +200,13 @@ button{font:inherit;color:inherit}
     <button class="back" type="button" id="cBack">← 日時を選び直す</button>
     <div class="pick" id="cPick"></div>
     <form class="form" id="cForm" novalidate>
+      <div id="topics"></div>
       <div id="profile"></div>
-      <div class="q"><label class="ql" for="memo">連絡事項<span class="opt">任意</span></label><p class="qh">相談したい内容や、遅れて来る可能性などがあれば書いてください。</p><textarea id="memo" maxlength="500"></textarea></div>
+      <div class="q"><label class="ql" for="memo">連絡事項<span class="opt">任意</span></label><p class="qh">遅れて来る可能性など、スタッフに伝えておきたいことがあれば書いてください。</p><textarea id="memo" maxlength="500"></textarea></div>
       <div class="q" id="f-agree">
         <ul class="rules">
           <li>予約は「来館する時間」の予約です。相談は30分ほどが目安で、そのあとも閉館（17:00）まで自由に過ごせます。</li>
-          <li>個別相談の際は、相談をスムーズに進めるため、相談の前にカウンセリングシート、相談後に振り返りシートへの入力をお願いしています（スマホで1分ほど）。施設利用のみの場合は不要です。</li>
+          <li>相談のあとは、振り返りシートへの入力をお願いしています（スマホで1分ほど）。施設利用のみの場合は不要です。</li>
           <li>友達と一緒に来たい場合や、遅れる可能性がある場合は、事前にCampus Addの公式LINEでご相談ください。</li>
           <li>相談の内容や来館人数によって、お待ちいただく場合があります。</li>
           <li>当サービスは、民間企業への就職を希望する方のサポートが中心です。</li>
@@ -220,6 +232,22 @@ button{font:inherit;color:inherit}
     </div>
   </main>
 
+  <!-- 5. 振り返り -->
+  <main id="v-reflect" hidden>
+    <button class="back" type="button" id="rBack">← 予約の画面へ</button>
+    <div class="done" style="padding-top:0">
+      <span class="label">REFLECTION</span>
+      <h2>今日の振り返り</h2>
+      <div class="pick" id="rPick"></div>
+    </div>
+    <form class="form" id="rForm" novalidate></form>
+    <div class="done" id="rDone" hidden>
+      <h2>ありがとうございました</h2>
+      <p>振り返りを受け付けました。次の来館でも、続きから一緒に進めましょう。</p>
+      <button class="cta ghost" type="button" id="rHome">予約の画面へ</button>
+    </div>
+  </main>
+
   <!-- 4. 予約の確認・キャンセル -->
   <main id="v-mine" hidden>
     <button class="back" type="button" id="mBack">← 予約の画面へ</button>
@@ -235,6 +263,8 @@ const $ = s => document.querySelector(s);
 const el = (tag, props={}, kids=[]) => { const n=document.createElement(tag); Object.assign(n, props); for(const k of [].concat(kids)) if(k!=null) n.append(k); return n; };
 const WD = "日月火水木金土";
 const GRADS = ["28卒","29卒","30卒","その他"];
+// 相談で選んでもらう項目（管理表のスクリプトの TOPICS と同じ）
+const TOPICS = ["ES作成","面接練習","自己分析","企業・業界研究","進路相談","就活の進め方全般"];
 
 // ---- 利用者の見分け方（テスト版：この端末を1人として扱う。LINE連携後はLINEのIDに置き換える） ----
 function deviceUid(){
@@ -259,7 +289,7 @@ function demoApi(){
   const pad=n=>String(n).padStart(2,"0"), ymd=d=>`${d.getUTCFullYear()}/${pad(d.getUTCMonth()+1)}/${pad(d.getUTCDate())}`;
   const times=["13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30"];
   const jst=new Date(Date.now()+9*3600e3), start=new Date(Date.UTC(jst.getUTCFullYear(),jst.getUTCMonth(),jst.getUTCDate()));
-  const days=[], rsv=[]; let user=null, seed=7;
+  const days=[], rsv=[]; let user=null, seed=7, reflected=false;
   const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
   for(let i=1;i<=28;i++){
     const d=new Date(start.getTime()+i*864e5), w=d.getUTCDay();
@@ -270,8 +300,9 @@ function demoApi(){
   }
   const ok=x=>new Promise(r=>setTimeout(()=>r(x),250));
   return {
-    get: q => q.action==="me" ? ok({ok:true,registered:!!user,name:user?user.name:"",reservations:rsv.filter(r=>r.active)}) : ok({ok:true,days,times,deadline:"15:00",demo:true}),
+    get: q => q.action==="me" ? ok({ok:true,registered:!!user,name:user?user.name:"",reservations:rsv.filter(r=>r.active),reflect:user&&!reflected?[{id:"demo",date:days[0].date,time:"13:00",topic1:"ES作成",topic2:"面接練習"}]:[]}) : ok({ok:true,days,times,deadline:"15:00",demo:true}),
     post: b => {
+      if(b.action==="reflect"){ reflected=true; return ok({ok:true}); }
       if(b.action==="cancel"){ const r=rsv.find(x=>x.id===b.id); if(r){ r.active=false; const d=days.find(x=>x.date===r.date); if(r.kind==="相談") d.consult.find(s=>s.time===r.time).left++; else d.place.left++; } return ok({ok:true}); }
       const d=days.find(x=>x.date===b.date); if(!d) return ok({ok:false,error:"この日は予約を受け付けていません。"});
       if(rsv.some(r=>r.active && r.date===b.date)) return ok({ok:false,error:"この日はすでに予約があります。時間を変えたいときは、いまの予約をキャンセルしてから予約し直してください。"});
@@ -291,7 +322,7 @@ function dateLabel(date, w){ const [,m,d]=date.split("/").map(Number); return `$
 function wOf(date){ const [y,m,d]=date.split("/").map(Number); return WD[new Date(Date.UTC(y,m-1,d)).getUTCDay()]; }
 
 function show(view){
-  ["home","confirm","done","mine"].forEach(v=>{ $("#v-"+v).hidden = v!==view; });
+  ["home","confirm","done","mine","reflect"].forEach(v=>{ $("#v-"+v).hidden = v!==view; });
   window.scrollTo(0,0);
 }
 
@@ -340,6 +371,70 @@ function renderDays(){
 }
 document.querySelectorAll('input[name="kind"]').forEach(r=>r.addEventListener("change",renderDays));
 
+// ---- 5. 振り返り（相談した日のあと） ----
+const SOLVED = ["解決した","少し進んだ","まだ解決していない"];
+const LEVELS = ["とても上がった（次にやるべき行動が明確になった）","やや上がった（ある程度整理できた）","どちらともいえない","あまり上がらなかった（まだ整理しきれていない）"];
+let REF=null;
+function renderRefAsk(){
+  const list=ME.reflect||[], box=$("#refAsk");
+  box.hidden=!list.length;
+  box.replaceChildren(...list.map(r=>el("div",{style:"display:grid;gap:8px"},[
+    el("b",{textContent:`${dateLabel(r.date,wOf(r.date))} ${r.time} の振り返りをお願いします`}),
+    el("small",{textContent:"相談のあとの振り返りです。スマホで1分ほどで終わります。"}),
+    Object.assign(el("button",{type:"button",className:"cta",textContent:"振り返りを入力する"}),{onclick:()=>openReflect(r)})
+  ])));
+}
+function choiceQ(id,label,list,cls){
+  return el("div",{className:"q",id:"f-"+id},[el("span",{className:"ql"},[label,el("span",{className:"req",textContent:"必須"})]),
+    el("div",{className:cls},list.map((t,i)=>el("label",{},[el("input",{type:"radio",name:id,value:t,id:id+"-"+i}),el("span",{textContent:t})]))), el("p",{className:"qe",hidden:true})]);
+}
+function textQ(id,label,help,ph){
+  return el("div",{className:"q",id:"f-"+id},[el("label",{className:"ql",htmlFor:id},[label,el("span",{className:"req",textContent:"必須"})]), help?el("p",{className:"qh",textContent:help}):null,
+    el("textarea",{id,maxLength:1000,placeholder:ph||"",style:"min-height:72px"}), el("p",{className:"qe",hidden:true})]);
+}
+function openReflect(r){
+  REF=r;
+  $("#rPick").replaceChildren(el("span",{className:"k",textContent:"相談・施設利用"}), el("span",{className:"d",textContent:dateLabel(r.date,wOf(r.date))+" "+r.time}),
+    el("span",{className:"x",textContent:"予約のときに選んだ相談内容をもとに、振り返ります"}));
+  const f=$("#rForm");
+  f.replaceChildren(
+    r.topic1 ? choiceQ("solved1",`最も解決したかった「${r.topic1}」は、どのくらい解決しましたか？`,SOLVED,"grads") : null,
+    r.topic2 ? choiceQ("solved2",`2番目に解決したかった「${r.topic2}」は、どのくらい解決しましたか？`,SOLVED,"grads") : null,
+    choiceQ("level","本日の相談を通じて、ご自身の課題や今後の方向性の「解像度」はどのくらい上がりましたか？",LEVELS,"levels"),
+    textQ("reason","上で答えた理由や、特に印象に残っている点を教えてください",""),
+    textQ("today","本日の振り返り（一言でOK）","今日来てよかったこと・話せてよかったこと","例）志望動機の軸について話せて、自分の強みをどう活かすかが少し見えてきた"),
+    textQ("next","今日からやること・やりたいと思うこと",""),
+    el("div",{className:"errbox",id:"rErr",hidden:true}),
+    el("button",{type:"submit",className:"cta",id:"rSend",textContent:"振り返りを送る"})
+  );
+  f.hidden=false; $("#rDone").hidden=true;
+  show("reflect");
+}
+$("#rForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  if(sending || !REF) return;
+  const pickv=n=>{ const x=document.querySelector(`input[name="${n}"]:checked`); return x?x.value:""; };
+  const v={solved1:pickv("solved1"), solved2:pickv("solved2"), level:pickv("level"), reason:val("reason"), today:val("today"), next:val("next")};
+  let good=true;
+  const chk=(id,ok,msg)=>{ if(!$("#f-"+id)) return; setBad("f-"+id, ok?"":msg); if(!ok) good=false; };
+  chk("solved1",!!v.solved1,"選んでください。"); chk("solved2",!!v.solved2,"選んでください。"); chk("level",!!v.level,"選んでください。");
+  chk("reason",!!v.reason,"入力してください。"); chk("today",!!v.today,"入力してください。"); chk("next",!!v.next,"入力してください。");
+  if(!good){ const bad=document.querySelector("#rForm .q.bad"); if(bad) bad.scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  const btn=$("#rSend"), err=$("#rErr"); sending=true; btn.disabled=true; btn.textContent="送っています…"; err.hidden=true;
+  try{
+    const r=await API.post({action:"reflect", uid:UID, id:REF.id, ...v});
+    if(!r.ok) throw new Error(r.error);
+    $("#rForm").hidden=true; $("#rDone").hidden=false; window.scrollTo(0,0);
+    load();
+  }catch(x){
+    err.textContent=x.message||"送信できませんでした。電波の良いところで、もう一度送ってください。"; err.hidden=false;
+  }finally{
+    sending=false; btn.disabled=false; btn.textContent="振り返りを送る";
+  }
+});
+$("#rBack").onclick=()=>show("home");
+$("#rHome").onclick=()=>show("home");
+
 function renderMe(){
   const n=ME.reservations.length;
   $("#me").hidden = !ME.registered && !n;
@@ -356,7 +451,7 @@ function load(){
     if(s.demo){ tb.textContent="お試しモード：仮のデータで動いています。予約しても実際には登録されません。"; tb.hidden=false; }
     else if(s.test){ tb.textContent="テスト版：この端末を1人の利用者として扱っています（LINE連携の前のため）"; tb.hidden=false; }
     $("#notice").hidden=true;
-    renderMe(); renderDays();
+    renderMe(); renderRefAsk(); renderDays();
   }).catch(err=>{
     const n=$("#notice"); n.textContent="空き状況を読み込めませんでした。電波の良いところで、ページを開き直してください。"; n.hidden=false;
     $("#days").replaceChildren();
@@ -387,9 +482,35 @@ function renderProfile(){
       el("div",{className:"grads"},["はい","いいえ"].map((g,i)=>el("label",{},[el("input",{type:"radio",name:"visited",value:g,id:"vs"+i}),el("span",{textContent:g})]))), el("p",{className:"qe",hidden:true})])
   );
 }
+// 相談の予約だけ：最も解決したいこと・2番目に解決したいこと（それぞれ具体的な内容は任意）
+function topicField(no,label){
+  const name="topic"+no;
+  return el("div",{className:"q",id:"f-"+name},[
+    el("span",{className:"ql"},[label,el("span",{className:"req",textContent:"必須"})]),
+    el("div",{className:"grads"},TOPICS.map((t,i)=>el("label",{},[el("input",{type:"radio",name,value:t,id:name+"-"+i}),el("span",{textContent:t})]))),
+    el("label",{className:"qh",htmlFor:"detail"+no,textContent:"具体的に相談したいこと（任意）",style:"margin:2px 0 0"}),
+    el("textarea",{id:"detail"+no,maxLength:300,placeholder:no===1?"例）ガクチカがうまくまとまらない":"例）面接で緊張してしまう",style:"min-height:64px"}),
+    el("p",{className:"qe",hidden:true})
+  ]);
+}
+function renderTopics(){
+  const box=$("#topics");
+  if(PICK.kind!=="相談"){ box.replaceChildren(); return; }
+  box.replaceChildren(el("p",{className:"sec",textContent:"相談したいことを教えてください"}), topicField(1,"相談で最も解決したいこと"), topicField(2,"2番目に解決したいこと"));
+  box.style.display="grid"; box.style.gap="12px";
+}
+function readTopics(){
+  if(PICK.kind!=="相談") return {ok:true, v:{}};
+  const g=n=>{ const x=document.querySelector(`input[name="topic${n}"]:checked`); return x?x.value:""; };
+  const t1=g(1), t2=g(2);
+  setBad("f-topic1", t1?"":"選んでください。");
+  setBad("f-topic2", !t2?"選んでください。":t2===t1?"1番目と違う項目を選んでください。":"");
+  return {ok:!!t1 && !!t2 && t1!==t2, v:{topic1:t1, detail1:val("detail1"), topic2:t2, detail2:val("detail2")}};
+}
 function pick(d,time){
   PICK={date:d.date, w:d.w, time, kind:kind()};
   $("#cPick").replaceChildren(...pickText(PICK));
+  renderTopics();
   renderProfile();
   $("#cErr").hidden=true; $("#agree").checked=false; $("#memo").value="";
   setBad("f-agree","");
@@ -413,12 +534,13 @@ function readProfile(){
 $("#cForm").addEventListener("submit", async e=>{
   e.preventDefault();
   if(sending || !PICK) return;
+  const tp=readTopics();
   const pr=readProfile();
   const agreed=$("#agree").checked; setBad("f-agree", agreed?"":"確認してチェックを入れてください。");
-  if(!pr.ok || !agreed){ const bad=document.querySelector("#cForm .q.bad"); if(bad) bad.scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  if(!tp.ok || !pr.ok || !agreed){ const bad=document.querySelector("#cForm .q.bad"); if(bad) bad.scrollIntoView({behavior:"smooth",block:"center"}); return; }
   const btn=$("#cSend"), err=$("#cErr"); sending=true; btn.disabled=true; btn.textContent="予約しています…"; err.hidden=true;
   try{
-    const r=await API.post({action:"reserve", uid:UID, date:PICK.date, time:PICK.time, kind:PICK.kind, memo:$("#memo").value, profile:pr.profile});
+    const r=await API.post({action:"reserve", uid:UID, date:PICK.date, time:PICK.time, kind:PICK.kind, memo:$("#memo").value, profile:pr.profile, ...tp.v});
     if(!r.ok){
       if(r.needProfile){ ME.registered=false; renderProfile(); }
       err.textContent=r.error||"予約できませんでした。"; err.hidden=false; err.scrollIntoView({behavior:"smooth",block:"center"});
