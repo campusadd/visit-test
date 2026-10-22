@@ -74,13 +74,14 @@ button{font:inherit;color:inherit}
 .kinds{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .kind{position:relative;display:block;cursor:pointer}
 .kind input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
-.kind > div{height:100%;background:var(--surface);border:1.5px solid var(--line);border-radius:18px;overflow:hidden;display:grid;align-content:start}
+.kind > div{position:relative;height:100%;background:var(--surface);border:1.5px solid var(--line);border-radius:18px;overflow:hidden;display:grid;align-content:start}
 .kind img{display:block;width:100%;height:auto;aspect-ratio:2/1;object-fit:cover}
 .kind .tx{padding:10px 12px 12px;display:grid;gap:3px}
 .kind b{font-size:15px;font-weight:700;letter-spacing:.06em}
 .kind small{font-size:12px;color:var(--muted);line-height:1.6}
 .kind input:checked+div{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
-.kind input:checked+div b::after{content:"選択中";margin-left:6px;font-size:10px;vertical-align:2px;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:1px 7px;letter-spacing:.04em}
+/* 「選択中」の札は写真の左上に重ねる（文字の行に入れると、幅が狭いスマホで折り返すため） */
+.kind input:checked+div::before{content:"✓ 選択中";position:absolute;top:8px;left:8px;font-size:11px;font-weight:700;white-space:nowrap;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:2px 10px;letter-spacing:.04em;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .kind input:focus-visible+div{outline:3px solid var(--star);outline-offset:2px}
 
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin:-4px 0 12px}
