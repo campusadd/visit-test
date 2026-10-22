@@ -7,95 +7,113 @@
 <title>Campus Add 来館予約</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=M+PLUS+2:wght@400;500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400&family=Noto+Sans+JP:wght@400;500;700&display=swap">
 <style>
-/* Campus Add のロゴの青と黄色。「使い方を選ぶ → 空いている日時を一覧から選ぶ → 確認」の3段 */
+/* 新しいWEBサイト（2026年10月 リニューアル版）の見た目に合わせる：
+   クリーム地にうっすら木目、水色のラベル＋黄色い星、薄茶の番号（01 02）、角の大きく丸い写真、緑のボタン */
 :root{
-  --bg:#f5f8fc; --surface:#ffffff; --soft:#eaf1f9; --ink:#2c3440; --muted:#677284; --line:#dbe4ef;
-  --accent:#0a66b8; --accent-ink:#ffffff; --mark:#f2b705; --mark-soft:#fff3c7; --mark-ink:#7a5600;
-  --ok:#0a7d4f; --ok-soft:#e3f5ec; --few:#a35f00; --few-soft:#fff1d6; --danger:#c62828; --danger-soft:#fdeaea;
-  --f-body:"M PLUS 2","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
-  --f-num:"Outfit","M PLUS 2",system-ui,sans-serif;
+  --bg:#fbf8f1; --surface:#ffffff; --soft:#f3eee3; --ink:#333333; --muted:#6f6a62; --line:#e7e0d2;
+  --blue:#2f6db0; --blue-soft:#e1ecf5; --star:#f2b705; --num:#b4936a;
+  --accent:#16a06d; --accent-ink:#ffffff; --mark-soft:#fff3c7; --mark-ink:#7a5600;
+  --ok:#128a5d; --ok-soft:#e2f4ec; --ok-line:#bfe6d4; --few:#a86400; --few-soft:#fff0d4; --few-line:#f3d9a8; --danger:#c62828; --danger-soft:#fdeaea;
+  --grain:rgba(0,0,0,.035);
+  --f-body:"Noto Sans JP","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
+  --f-num:"Josefin Sans","Noto Sans JP",sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#11161d; --surface:#18202a; --soft:#202b38; --ink:#eef2f6; --muted:#a3adba; --line:#2c3846;
-  --accent:#5aa9ec; --accent-ink:#0c1a28; --mark:#f5c430; --mark-soft:#3a3016; --mark-ink:#f8dc8a;
-  --ok:#5fd19d; --ok-soft:#173327; --few:#f2b45a; --few-soft:#3a2a12; --danger:#ff8a80; --danger-soft:#3a1c1c; color-scheme:dark;
+  --bg:#17150f; --surface:#211e17; --soft:#2a261d; --ink:#f1ede4; --muted:#b3ab9c; --line:#3a3428;
+  --blue:#8dbbe8; --blue-soft:#1f2c3a; --star:#f5c430; --num:#d2b48a;
+  --accent:#3fc48f; --accent-ink:#0b1f16; --mark-soft:#3a3016; --mark-ink:#f8dc8a;
+  --ok:#4fd39d; --ok-soft:#173327; --ok-line:#25553f; --few:#f2b45a; --few-soft:#3a2a12; --few-line:#5a4220; --danger:#ff8a80; --danger-soft:#3a1c1c;
+  color-scheme:dark;
 }}
 :root[data-theme="dark"]{
-  --bg:#11161d; --surface:#18202a; --soft:#202b38; --ink:#eef2f6; --muted:#a3adba; --line:#2c3846;
-  --accent:#5aa9ec; --accent-ink:#0c1a28; --mark:#f5c430; --mark-soft:#3a3016; --mark-ink:#f8dc8a;
-  --ok:#5fd19d; --ok-soft:#173327; --few:#f2b45a; --few-soft:#3a2a12; --danger:#ff8a80; --danger-soft:#3a1c1c; color-scheme:dark;
+  --bg:#17150f; --surface:#211e17; --soft:#2a261d; --ink:#f1ede4; --muted:#b3ab9c; --line:#3a3428;
+  --blue:#8dbbe8; --blue-soft:#1f2c3a; --star:#f5c430; --num:#d2b48a;
+  --accent:#3fc48f; --accent-ink:#0b1f16; --mark-soft:#3a3016; --mark-ink:#f8dc8a;
+  --ok:#4fd39d; --ok-soft:#173327; --ok-line:#25553f; --few:#f2b45a; --few-soft:#3a2a12; --few-line:#5a4220; --danger:#ff8a80; --danger-soft:#3a1c1c;
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--bg)}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;font-weight:500;line-height:1.7;letter-spacing:.02em;-webkit-font-smoothing:antialiased}
-.wrap{max-width:640px;margin:0 auto;padding:16px 16px 72px}
-h1,h2,h3{margin:0;line-height:1.35;text-wrap:balance}
-a{color:var(--accent)}
+/* WEBサイトの背景の木目を、細い波線でうっすら再現 */
+body{margin:0;color:var(--ink);font-family:var(--f-body);font-size:15px;font-weight:400;line-height:1.8;letter-spacing:.03em;-webkit-font-smoothing:antialiased;
+  background-color:var(--bg);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='240' viewBox='0 0 120 240'%3E%3Cpath d='M20 0c10 40-10 80 0 120s-10 80 0 120M70 0c-8 50 12 70 2 120s10 70-2 120M105 0c6 30-8 60 0 90s8 90-2 150' fill='none' stroke='%23000' stroke-opacity='.035' stroke-width='1.4'/%3E%3C/svg%3E")}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px 72px}
+h1,h2,h3{margin:0;line-height:1.4;text-wrap:balance;font-weight:500;letter-spacing:.12em}
+a{color:var(--blue)}
 button{font:inherit;color:inherit}
-:focus-visible{outline:3px solid var(--mark);outline-offset:2px;border-radius:6px}
+:focus-visible{outline:3px solid var(--star);outline-offset:2px;border-radius:6px}
 
-.top{display:grid;gap:10px;justify-items:center;text-align:center;padding:8px 0 14px}
-.brand{width:180px;height:31px;overflow:hidden;background:#fff;border-radius:8px;box-sizing:content-box;padding:7px 11px}
-.brand img{display:block;width:222px;height:73px;max-width:none;margin:-21px 0 0 -21px}
-.top h1{font-size:24px;font-weight:800;letter-spacing:.06em}
-.info{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;font-size:13px;color:var(--muted)}
-.info b{color:var(--ink)}
-.testbar{background:var(--mark-soft);color:var(--mark-ink);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;text-align:center;margin-bottom:12px}
-.me{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px 10px 14px;font-size:14px;margin-bottom:14px}
-.me b{font-size:15px}
-.linkbtn{border:1.5px solid var(--accent);background:transparent;color:var(--accent);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
-.linkbtn .n{display:inline-grid;place-items:center;min-width:20px;height:20px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-size:11px;margin-left:6px;padding:0 5px}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+.brand{width:150px;height:26px;overflow:hidden;display:block}
+.brand img{display:block;width:185px;height:61px;max-width:none;margin:-17px 0 0 -17px}
+.label{display:inline-flex;align-items:center;gap:6px;background:var(--blue-soft);color:var(--blue);border-radius:999px;padding:3px 12px 3px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;justify-self:start}
+.label::before{content:"";width:11px;height:11px;background:var(--star);clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
+.hero{display:grid;gap:12px;padding:10px 0 4px}
+.hero h1{font-size:30px}
+.hero p{margin:0;color:var(--muted);font-size:14px}
+.info{display:flex;flex-wrap:wrap;gap:6px}
+.info span{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 12px;font-size:12px;color:var(--muted)}
+.info b{color:var(--ink);font-weight:700}
+/* 写真は、WEBサイトと同じく角を大きく丸めた形に */
+.photo{display:block;width:100%;height:auto;object-fit:cover;border-radius:110px 28px 120px 36px / 70px 24px 90px 30px}
+.hero .photo{aspect-ratio:21/9;margin-top:6px;object-position:center 35%}
+.testbar{background:var(--mark-soft);color:var(--mark-ink);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;text-align:center}
+.me{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px 10px 16px;font-size:14px;margin-top:14px}
+.me b{font-size:15px;font-weight:700}
+.linkbtn{border:1.5px solid var(--blue);background:transparent;color:var(--blue);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.linkbtn .n{display:inline-grid;place-items:center;min-width:20px;height:20px;border-radius:999px;background:var(--blue);color:var(--surface);font-size:11px;margin-left:6px;padding:0 5px}
 
-.step{display:flex;align-items:center;gap:8px;margin:22px 0 10px}
-.step span{font-family:var(--f-num);font-size:12px;font-weight:700;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:1px 10px}
-.step h2{font-size:18px}
-.kinds{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.step{display:grid;gap:4px;margin:34px 0 14px}
+.step .no{font-family:var(--f-num);font-weight:300;font-size:30px;line-height:1;color:var(--num);letter-spacing:.04em}
+.step h2{font-size:21px}
+.kinds{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .kind{position:relative;display:block;cursor:pointer}
 .kind input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
-.kind div{height:100%;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:4px;align-content:start}
-.kind b{font-size:16px}
-.kind small{font-size:12px;color:var(--muted);line-height:1.55}
-.kind input:checked+div{border-color:var(--accent);background:var(--soft);box-shadow:inset 0 0 0 1px var(--accent)}
-.kind input:focus-visible+div{outline:3px solid var(--mark);outline-offset:2px}
+.kind > div{height:100%;background:var(--surface);border:1.5px solid var(--line);border-radius:18px;overflow:hidden;display:grid;align-content:start}
+.kind img{display:block;width:100%;height:auto;aspect-ratio:2/1;object-fit:cover}
+.kind .tx{padding:10px 12px 12px;display:grid;gap:3px}
+.kind b{font-size:15px;font-weight:700;letter-spacing:.06em}
+.kind small{font-size:12px;color:var(--muted);line-height:1.6}
+.kind input:checked+div{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.kind input:checked+div b::after{content:"選択中";margin-left:6px;font-size:10px;vertical-align:2px;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:1px 7px;letter-spacing:.04em}
+.kind input:focus-visible+div{outline:3px solid var(--star);outline-offset:2px}
 
-.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin:0 0 10px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin:-4px 0 12px}
 .legend i{font-style:normal;font-weight:700;margin-right:3px}
-.days{display:grid;gap:10px}
-.day{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:10px}
+.days{display:grid;gap:12px}
+.day{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 14px 12px;display:grid;gap:10px}
 .dh{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-.dh b{font-size:16px}
-.dh b .w{font-size:13px;color:var(--muted);margin-left:2px}
-.dh b .w.sat{color:#2f6fd0}
-.dh .sum{font-size:12px;font-weight:700;border-radius:999px;padding:1px 10px}
+.dh b{font-size:16px;font-weight:700;letter-spacing:.06em}
+.dh .sum{font-size:11px;font-weight:700;border-radius:999px;padding:1px 10px}
 .sum.ok{background:var(--ok-soft);color:var(--ok)}
 .sum.few{background:var(--few-soft);color:var(--few)}
 .sum.full{background:var(--danger-soft);color:var(--danger)}
 .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.chip{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:6px 4px;display:grid;justify-items:center;gap:0;cursor:pointer;line-height:1.3}
-.chip .t{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-size:15px;font-weight:600}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:6px 4px;display:grid;justify-items:center;cursor:pointer;line-height:1.35}
+.chip .t{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-size:16px;font-weight:400;letter-spacing:.02em}
 .chip .s{font-size:11px;font-weight:700}
+.chip.ok{border-color:var(--ok-line);background:var(--ok-soft)}
 .chip.ok .s{color:var(--ok)}
+.chip.few{border-color:var(--few-line);background:var(--few-soft)}
 .chip.few .s{color:var(--few)}
-.chip.ok{border-color:var(--ok-soft)}
-.chip.few{border-color:var(--few-soft);background:var(--few-soft)}
 .chip:hover:not([disabled]){border-color:var(--accent)}
-.chip[disabled]{cursor:default;background:var(--soft);border-color:transparent}
-.chip[disabled] .t{color:var(--muted)}
-.chip[disabled] .s{color:var(--muted)}
-.empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:18px 16px;color:var(--muted);font-size:14px;text-align:center}
-.notice{background:var(--danger-soft);color:var(--danger);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;margin-bottom:12px}
+.chip[disabled]{cursor:default;background:transparent;border-style:dashed}
+.chip[disabled] .t,.chip[disabled] .s{color:var(--muted)}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:16px;padding:18px 16px;color:var(--muted);font-size:14px;text-align:center}
+.notice{background:var(--danger-soft);color:var(--danger);border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;margin-top:14px}
 
-.back{display:inline-flex;align-items:center;gap:6px;border:none;background:none;color:var(--accent);font-weight:700;cursor:pointer;padding:4px 0;margin-bottom:6px}
-.pick{background:var(--surface);border:1.5px solid var(--accent);border-radius:14px;padding:14px 16px;display:grid;gap:2px}
-.pick .k{font-size:12px;font-weight:700;color:var(--accent)}
-.pick .d{font-size:20px;font-weight:800}
+.back{display:inline-flex;align-items:center;gap:6px;border:none;background:none;color:var(--blue);font-weight:700;cursor:pointer;padding:16px 0 8px}
+.pick{background:var(--surface);border:1.5px solid var(--accent);border-radius:18px;padding:14px 18px;display:grid;gap:2px}
+.pick .k{font-size:12px;font-weight:700;color:var(--ok);letter-spacing:.06em}
+.pick .d{font-size:21px;font-weight:700;letter-spacing:.04em}
 .pick .x{font-size:12px;color:var(--muted)}
-.form{display:grid;gap:12px;margin-top:14px}
-.q{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:8px;margin:0;min-width:0}
+.form{display:grid;gap:12px;margin-top:16px}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 16px;display:grid;gap:8px;margin:0;min-width:0}
 .q.bad{border-color:var(--danger)}
 .ql{font-weight:700;font-size:14px}
 .req,.opt{font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:2px}
@@ -108,53 +126,60 @@ button{font:inherit;color:inherit}
 .grads{display:flex;flex-wrap:wrap;gap:6px}
 .grads label{position:relative;cursor:pointer}
 .grads input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
-.grads span{display:block;border:1px solid var(--line);border-radius:10px;padding:7px 14px;font-size:14px;background:var(--bg)}
+.grads span{display:block;border:1px solid var(--line);border-radius:999px;padding:6px 16px;font-size:14px;background:var(--bg)}
 .grads input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
-.grads input:focus-visible+span{outline:3px solid var(--mark);outline-offset:2px}
-.sec{font-size:13px;font-weight:700;color:var(--muted);margin:6px 0 -4px}
+.grads input:focus-visible+span{outline:3px solid var(--star);outline-offset:2px}
+.sec{font-size:13px;font-weight:700;color:var(--muted);margin:4px 0 -2px}
 .rules{margin:0;padding:0 0 0 1.1em;font-size:12px;color:var(--muted);display:grid;gap:4px}
 .agree{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;cursor:pointer}
 .agree input{width:20px;height:20px;accent-color:var(--accent)}
-.cta{display:flex;justify-content:center;align-items:center;width:100%;border:none;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px;padding:15px 18px;cursor:pointer;text-decoration:none}
+/* WEBサイトと同じ、緑の丸いボタン＋矢印 */
+.cta{display:flex;justify-content:center;align-items:center;gap:8px;width:100%;border:none;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px;letter-spacing:.06em;padding:15px 22px;cursor:pointer;text-decoration:none}
+.cta::after{content:"→"}
 .cta:hover{filter:brightness(1.06)}
 .cta[disabled]{opacity:.6;cursor:wait}
-.cta.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.cta.ghost{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
 .errbox{background:var(--danger-soft);color:var(--danger);border-radius:12px;padding:12px 14px;font-size:13px;font-weight:700}
 
-.done{text-align:center;display:grid;gap:14px;justify-items:center;padding:20px 0}
-.done .big{font-size:26px;font-weight:800;color:var(--accent)}
+.done{display:grid;gap:16px;padding:18px 0}
+.done .photo{aspect-ratio:21/9}
+.done h2{font-size:24px}
 .done p{margin:0;font-size:14px;color:var(--muted)}
-.done .pick{width:100%;text-align:left}
+.done .cta{max-width:340px;justify-self:center}
 .list{display:grid;gap:10px}
-.rsv{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.rsv b{display:block;font-size:16px}
+.rsv{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 16px}
+.rsv b{display:block;font-size:16px;font-weight:700}
 .rsv small{color:var(--muted);font-size:12px}
 .rsv button{border:1.5px solid var(--danger);background:transparent;color:var(--danger);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 .loading{color:var(--muted);text-align:center;padding:30px 0;font-size:14px}
-@media (max-width:380px){ .kinds{grid-template-columns:1fr} .chips{grid-template-columns:repeat(4,1fr);gap:4px} .chip .t{font-size:14px} }
+@media (max-width:380px){ .kinds{grid-template-columns:1fr} .chips{gap:4px} .chip .t{font-size:14px} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header class="top">
-    <div class="brand"><img src="campus-add-logo.png" alt="Campus Add" width="300" height="98"></div>
-    <h1>来館予約</h1>
-    <div class="info"><span>開館 <b>13:00〜17:00</b></span><span>予約は <b id="dl">前日15:00</b> まで</span></div>
-  </header>
+  <div class="bar"><span class="brand"><img src="campus-add-logo.png" alt="Campus Add" width="300" height="98"></span></div>
   <div class="testbar" id="testbar" hidden></div>
 
   <!-- 1. 予約する（使い方 → 日時） -->
   <main id="v-home">
+    <header class="hero">
+      <span class="label">RESERVATION</span>
+      <h1>来館予約</h1>
+      <p>空いている日時を選んで、そのまま予約できます。<br>相談のあとも、閉館まで自由に過ごせます。</p>
+      <div class="info"><span>開館 <b>13:00〜17:00</b></span><span>予約は <b id="dl">前日15:00</b> まで</span></div>
+      <img class="photo" src="photo-welcome.jpg" alt="Campus Addのスタッフが、来館した学生を迎えている様子" width="1200" height="800">
+    </header>
     <div class="me" id="me" hidden><span id="meText"></span><button class="linkbtn" type="button" id="toMine">予約の確認<span class="n" id="mineN" hidden></span></button></div>
     <div class="notice" id="notice" hidden></div>
 
-    <div class="step"><span>1</span><h2>使い方を選ぶ</h2></div>
+    <div class="step"><span class="no">01</span><h2>使い方を選ぶ</h2></div>
     <div class="kinds" role="radiogroup" aria-label="使い方">
-      <label class="kind"><input type="radio" name="kind" value="相談" checked><div><b>相談＋滞在</b><small>ES添削・面接練習・進路相談など（30分ほど）。相談のあとも閉館まで使えます</small></div></label>
-      <label class="kind"><input type="radio" name="kind" value="場所利用"><div><b>座席の利用だけ</b><small>相談なしで、ES作成や企業研究などに座席を使えます</small></div></label>
+      <label class="kind"><input type="radio" name="kind" value="相談" checked><div><img src="photo-consult.jpg" alt="" width="800" height="533" loading="lazy"><div class="tx"><b>相談・施設利用</b><small>ES添削・面接練習・進路相談など（30分ほど）。相談のあとも閉館まで使えます</small></div></div></label>
+      <label class="kind"><input type="radio" name="kind" value="場所利用"><div><img src="photo-seat.jpg" alt="" width="800" height="533" loading="lazy"><div class="tx"><b>施設利用のみ</b><small>相談なしで、ES作成や企業研究などに館内を使えます</small></div></div></label>
     </div>
 
-    <div class="step"><span>2</span><h2 id="step2">空いている時間を選ぶ</h2></div>
+    <div class="step"><span class="no">02</span><h2 id="step2">空いている時間を選ぶ</h2></div>
     <div class="legend" id="legend"></div>
     <div class="days" id="days"><div class="loading">空き状況を読み込んでいます…</div></div>
   </main>
@@ -169,7 +194,8 @@ button{font:inherit;color:inherit}
       <div class="q" id="f-agree">
         <ul class="rules">
           <li>予約は「来館する時間」の予約です。相談は30分ほどが目安で、そのあとも閉館（17:00）まで自由に過ごせます。</li>
-          <li>友人と一緒に来たい場合や、遅れる可能性がある場合は、事前にCampus Addの公式LINEでご相談ください。</li>
+          <li>個別相談の際は、相談をスムーズに進めるため、相談の前にカウンセリングシート、相談後に振り返りシートへの入力をお願いしています（スマホで1分ほど）。施設利用のみの場合は不要です。</li>
+          <li>友達と一緒に来たい場合や、遅れる可能性がある場合は、事前にCampus Addの公式LINEでご相談ください。</li>
           <li>相談の内容や来館人数によって、お待ちいただく場合があります。</li>
           <li>当サービスは、民間企業への就職を希望する方のサポートが中心です。</li>
           <li>キャンセルはこのページの「予約の確認」からできます。当日のキャンセルや遅れる場合は、LINEでご連絡ください。</li>
@@ -185,10 +211,12 @@ button{font:inherit;color:inherit}
   <!-- 3. 予約完了 -->
   <main id="v-done" hidden>
     <div class="done">
-      <div class="big">予約が確定しました</div>
+      <span class="label">THANK YOU</span>
+      <h2>予約が確定しました</h2>
       <div class="pick" id="dPick"></div>
+      <img class="photo" src="photo-done.jpg" alt="Campus Addのテーブルに置かれたWelcomeの飾り" width="800" height="533" loading="lazy">
       <p>当日は、予約した時間にCampus Addへお越しください。<br>キャンセルは、このページの「予約の確認」からできます。</p>
-      <button class="cta ghost" type="button" id="dHome" style="max-width:320px">続けて別の日も予約する</button>
+      <button class="cta ghost" type="button" id="dHome">続けて別の日も予約する</button>
     </div>
   </main>
 
@@ -273,7 +301,7 @@ function renderLegend(){
   $("#step2").textContent = k==="相談" ? "空いている時間を選ぶ" : "来館する日と時間を選ぶ";
   $("#legend").replaceChildren(...(k==="相談"
     ? [el("span",{},[el("i",{textContent:"◎",style:"color:var(--ok)"}),"空きあり"]), el("span",{},[el("i",{textContent:"△",style:"color:var(--few)"}),"残り1"]), el("span",{},[el("i",{textContent:"×"}),"満席・受付なし"])]
-    : [el("span",{textContent:"座席は1日あたりの人数で受け付けています。来館する時間を選んでください。"})]));
+    : [el("span",{textContent:"施設利用は1日あたりの人数で受け付けています。来館する時間を選んでください。"})]));
 }
 function renderDays(){
   renderLegend();
@@ -296,7 +324,7 @@ function renderDays(){
       });
     }else{
       const left=d.place.left;
-      sum = left<1 ? el("span",{className:"sum full",textContent:"満席"}) : el("span",{className:"sum "+(left<=2?"few":"ok"),textContent:`残り ${left}席`});
+      sum = left<1 ? el("span",{className:"sum full",textContent:"満席"}) : el("span",{className:"sum "+(left<=2?"few":"ok"),textContent:`残り ${left}名`});
       chips=DATA.times.map(t=>{
         const b=el("button",{type:"button",className:"chip "+(left>0?"ok":""),disabled:left<1},[el("span",{className:"t",textContent:t}), el("span",{className:"s",textContent:left>0?"来館":"× 満席"})]);
         b.setAttribute("aria-label", dateLabel(d.date,d.w)+" "+t+" に来館");
@@ -337,7 +365,7 @@ function load(){
 
 // ---- 2. 確認・入力 ----
 function pickText(p){
-  return [el("span",{className:"k",textContent:p.kind==="相談"?"相談＋滞在":"座席の利用"}), el("span",{className:"d",textContent:dateLabel(p.date,p.w)+" "+p.time}), el("span",{className:"x",textContent:p.kind==="相談"?"相談は30分ほど。そのあとも閉館（17:00）まで使えます":"来館する時間です。閉館（17:00）まで使えます"})];
+  return [el("span",{className:"k",textContent:p.kind==="相談"?"相談・施設利用":"施設利用のみ"}), el("span",{className:"d",textContent:dateLabel(p.date,p.w)+" "+p.time}), el("span",{className:"x",textContent:p.kind==="相談"?"相談は30分ほど。そのあとも閉館（17:00）まで使えます":"来館する時間です。閉館（17:00）まで館内を使えます"})];
 }
 function field(id,label,{type="text",ph="",help="",mode=""}={}){
   const inp=el("input",{type,id,placeholder:ph,maxLength:60}); if(mode) inp.inputMode=mode;
@@ -416,7 +444,7 @@ function renderMine(){
       try{ const x=await API.post({action:"cancel",uid:UID,id:r.id}); if(!x.ok) throw new Error(x.error); await load(); renderMine(); }
       catch(e){ alert(e.message||"キャンセルできませんでした。LINEでご連絡ください。"); btn.disabled=false; btn.textContent="キャンセル"; }
     };
-    return el("div",{className:"rsv"},[el("div",{},[el("b",{textContent:dateLabel(r.date,wOf(r.date))+" "+r.time}), el("small",{textContent:r.kind==="相談"?"相談＋滞在":"座席の利用"})]), btn]);
+    return el("div",{className:"rsv"},[el("div",{},[el("b",{textContent:dateLabel(r.date,wOf(r.date))+" "+r.time}), el("small",{textContent:r.kind==="相談"?"相談・施設利用":"施設利用のみ"})]), btn]);
   }));
 }
 $("#toMine").onclick=()=>{ renderMine(); show("mine"); };
