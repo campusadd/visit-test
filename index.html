@@ -80,8 +80,7 @@ button{font:inherit;color:inherit}
 .kind b{font-size:15px;font-weight:700;letter-spacing:.06em}
 .kind small{font-size:12px;color:var(--muted);line-height:1.6}
 .kind input:checked+div{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
-/* 「選択中」の札は写真の左上に重ねる（文字の行に入れると、幅が狭いスマホで折り返すため） */
-.kind input:checked+div::before{content:"✓ 選択中";position:absolute;top:8px;left:8px;font-size:11px;font-weight:700;white-space:nowrap;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:2px 10px;letter-spacing:.04em;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+
 .kind input:focus-visible+div{outline:3px solid var(--star);outline-offset:2px}
 
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin:-4px 0 12px}
@@ -153,6 +152,25 @@ button{font:inherit;color:inherit}
 .rsv small{color:var(--muted);font-size:12px}
 .rsv button{border:1.5px solid var(--danger);background:transparent;color:var(--danger);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 .loading{color:var(--muted);text-align:center;padding:30px 0;font-size:14px}
+/* アクセス・連絡先（WEBサイトのアクセスページの内容） */
+.acc,.contact{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;gap:14px}
+.contact{margin-top:12px;gap:8px}
+.contact p{margin:0;font-size:13px;color:var(--muted)}
+.contact small{font-size:11px;color:var(--muted)}
+.acc .photo{aspect-ratio:16/9}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:13px}
+.facts dt{color:var(--muted);font-size:12px;font-weight:700;padding-top:1px}
+.facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.facts dd small{display:block;font-size:11px;color:var(--muted)}
+.facts a{font-weight:700}
+.route{margin:0;padding:0;list-style:none;counter-reset:r;display:grid;gap:8px}
+.route li{counter-increment:r;display:grid;grid-template-columns:34px 1fr;column-gap:8px;font-size:12px;color:var(--muted)}
+.route li::before{content:counter(r,decimal-leading-zero);grid-row:span 2;font-family:var(--f-num);font-weight:300;font-size:22px;line-height:1.2;color:var(--num)}
+.route li b{color:var(--ink);font-size:13px}
+.acc .cta{padding:11px 18px;font-size:14px}
+/* 「選択中」の札は写真の左下に重ねる（顔にかからないように） */
+.kind .ph{position:relative;display:block}
+.kind input:checked+div .ph::after{content:"✓ 選択中";position:absolute;left:8px;bottom:8px;font-size:11px;font-weight:700;white-space:nowrap;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:2px 10px;letter-spacing:.04em;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .refask{display:grid;gap:8px;background:var(--mark-soft);color:var(--mark-ink);border-radius:16px;padding:14px 16px;margin-top:14px}
 .refask b{font-size:15px}
 .refask small{font-size:12px}
@@ -187,13 +205,38 @@ button{font:inherit;color:inherit}
 
     <div class="step"><span class="no">01</span><h2>使い方を選ぶ</h2></div>
     <div class="kinds" role="radiogroup" aria-label="使い方">
-      <label class="kind"><input type="radio" name="kind" value="相談" checked><div><img src="photo-consult.jpg" alt="" width="800" height="533" loading="lazy"><div class="tx"><b>相談・施設利用</b><small>ES添削・面接練習・進路相談など（30分ほど）。相談のあとも閉館まで使えます</small></div></div></label>
-      <label class="kind"><input type="radio" name="kind" value="場所利用"><div><img src="photo-seat.jpg" alt="" width="800" height="533" loading="lazy"><div class="tx"><b>施設利用のみ</b><small>相談なしで、ES作成や企業研究などに館内を使えます</small></div></div></label>
+      <label class="kind"><input type="radio" name="kind" value="相談" checked><div><span class="ph"><img src="photo-consult.jpg" alt="" width="800" height="533" loading="lazy"></span><div class="tx"><b>相談・施設利用</b><small>ES添削・面接練習・進路相談など（30分ほど）。相談のあとも閉館まで使えます</small></div></div></label>
+      <label class="kind"><input type="radio" name="kind" value="場所利用"><div><span class="ph"><img src="photo-seat.jpg" alt="" width="800" height="533" loading="lazy"></span><div class="tx"><b>施設利用のみ</b><small>相談なしで、ES作成や企業研究などに館内を使えます</small></div></div></label>
     </div>
 
     <div class="step"><span class="no">02</span><h2 id="step2">空いている時間を選ぶ</h2></div>
     <div class="legend" id="legend"></div>
     <div class="days" id="days"><div class="loading">空き状況を読み込んでいます…</div></div>
+
+    <div class="step"><span class="no">03</span><h2>アクセス</h2></div>
+    <div class="acc">
+      <img class="photo" src="photo-access.jpg" alt="アイパスビルの入口と、Campus Addの白い旗" width="800" height="450" loading="lazy">
+      <dl class="facts">
+        <dt>住所</dt><dd>〒060-0051<br>北海道札幌市中央区南1条東3丁目10-13 アイパスビル3F</dd>
+        <dt>最寄り駅</dt><dd>地下鉄東西線「バスセンター前駅」6番出口から徒歩約2分<small>大通方面からは、地下道を通って近くまで来られます</small></dd>
+      </dl>
+      <ol class="route">
+        <li><b>6番出口を出る</b>地下鉄東西線「バスセンター前駅」6番出口から地上へ出ます。</li>
+        <li><b>Campus Add方面へ</b>さっぽろテレビ塔を目の前に、角を左へ約100m進みます。</li>
+        <li><b>建物を確認</b>アイパスビルに到着。Campus Addの白い旗が目印です。</li>
+        <li><b>3階へ</b>建物に入り、階段で3階までお越しください。</li>
+      </ol>
+      <a class="cta ghost" href="https://www.google.com/maps/search/?api=1&amp;query=%E6%9C%AD%E5%B9%8C%E5%B8%82%E4%B8%AD%E5%A4%AE%E5%8C%BA%E5%8D%971%E6%9D%A1%E6%9D%B13%E4%B8%81%E7%9B%AE10-13%20%E3%82%A2%E3%82%A4%E3%83%91%E3%82%B9%E3%83%93%E3%83%AB" target="_blank" rel="noopener">Google Mapで見る</a>
+    </div>
+    <div class="contact">
+      <span class="label">CONTACT</span>
+      <p>予約の変更や当日の遅れ・キャンセルは、Campus Addの公式LINEでご連絡ください。</p>
+      <dl class="facts">
+        <dt>電話</dt><dd><a href="tel:0115771396">011-577-1396</a></dd>
+        <dt>メール</dt><dd><a href="mailto:info@sejapan.jp">info@sejapan.jp</a></dd>
+      </dl>
+      <small>運営：株式会社エス・イー・ジャパン</small>
+    </div>
   </main>
 
   <!-- 2. 確認・入力 -->
