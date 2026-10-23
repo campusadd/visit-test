@@ -90,6 +90,9 @@ button{font:inherit;color:inherit}
 .dh{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .dh b{font-size:16px;font-weight:700;letter-spacing:.06em}
 .dh .sum{font-size:11px;font-weight:700;border-radius:999px;padding:1px 10px}
+.day .staff{font-size:12px;color:var(--muted);margin-top:-6px}
+.same{display:flex;align-items:flex-start;gap:8px;font-size:14px;cursor:pointer}
+.same input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent)}
 .sum.ok{background:var(--ok-soft);color:var(--ok)}
 .sum.few{background:var(--few-soft);color:var(--few)}
 .sum.full{background:var(--danger-soft);color:var(--danger)}
@@ -342,11 +345,11 @@ function demoApi(){
     if(w===0||w===6||rnd()<.12) continue; // 土日と、ときどき休館
     if(i===1 && jst.getUTCHours()>=15) continue; // 前日15時の締切を過ぎた明日
     const cap=rnd()<.2?1:2;
-    days.push({date:ymd(d), w:WD[w], consult:times.map(t=>{ const used=Math.min(cap, rnd()<.35?Math.floor(rnd()*3):0); return {time:t,cap,left:cap-used}; }), place:{cap:4,left:Math.floor(rnd()*5)}});
+    days.push({date:ymd(d), w:WD[w], staff:rnd()<.3?"亀田・非常勤アドバイザー":"赤坂・亀田", consult:times.map(t=>{ const used=Math.min(cap, rnd()<.35?Math.floor(rnd()*3):0); return {time:t,cap,left:cap-used}; }), place:{cap:4,left:Math.floor(rnd()*5)}});
   }
   const ok=x=>new Promise(r=>setTimeout(()=>r(x),250));
   return {
-    get: q => q.action==="me" ? ok({ok:true,registered:!!user,name:user?user.name:"",reservations:rsv.filter(r=>r.active),reflect:user&&!reflected?[{id:"demo",date:days[0].date,time:"13:00",topic1:"ES作成",topic2:"面接練習"}]:[]}) : ok({ok:true,days,times,deadline:"15:00",demo:true}),
+    get: q => q.action==="me" ? ok({ok:true,registered:!!user,name:user?user.name:"",reservations:rsv.filter(r=>r.active),lastStaff:user?"亀田":"",reflect:user&&!reflected?[{id:"demo",date:days[0].date,time:"13:00",topic1:"ES作成",topic2:"面接練習"}]:[]}) : ok({ok:true,days,times,deadline:"15:00",demo:true}),
     post: b => {
       if(b.action==="reflect"){ reflected=true; return ok({ok:true}); }
       if(b.action==="cancel"){ const r=rsv.find(x=>x.id===b.id); if(r){ r.active=false; const d=days.find(x=>x.date===r.date); if(r.kind==="相談") d.consult.find(s=>s.time===r.time).left++; else d.place.left++; } return ok({ok:true}); }
@@ -411,6 +414,7 @@ function renderDays(){
     }
     return el("div",{className:"day"},[
       el("div",{className:"dh"},[el("b",{},[dateLabel(d.date,d.w)]), sum]),
+      d.staff ? el("div",{className:"staff",textContent:"担当："+d.staff}) : null,
       el("div",{className:"chips"},chips)
     ]);
   }));
@@ -542,7 +546,8 @@ function topicField(no,label){
 function renderTopics(){
   const box=$("#topics");
   if(PICK.kind!=="相談"){ box.replaceChildren(); return; }
-  box.replaceChildren(el("p",{className:"sec",textContent:"相談したいことを教えてください"}), topicField(1,"相談で最も解決したいこと"), topicField(2,"2番目に解決したいこと"));
+  const same = ME.lastStaff ? el("div",{className:"q"},[el("label",{className:"same"},[el("input",{type:"checkbox",id:"sameStaff"}), el("span",{},[`前回の担当（${ME.lastStaff}）を希望する`, el("br"), el("small",{className:"qh",style:"margin:0",textContent:"任意です。できるだけ調整しますが、ご希望に沿えない場合もあります。"})])])]) : null;
+  box.replaceChildren(el("p",{className:"sec",textContent:"相談したいことを教えてください"}), topicField(1,"相談で最も解決したいこと"), topicField(2,"2番目に解決したいこと"), same);
   box.style.display="grid"; box.style.gap="12px";
 }
 function readTopics(){
@@ -551,7 +556,8 @@ function readTopics(){
   const t1=g(1), t2=g(2);
   setBad("f-topic1", t1?"":"選んでください。");
   setBad("f-topic2", !t2?"選んでください。":t2===t1?"1番目と違う項目を選んでください。":"");
-  return {ok:!!t1 && !!t2 && t1!==t2, v:{topic1:t1, detail1:val("detail1"), topic2:t2, detail2:val("detail2")}};
+  const ss=$("#sameStaff");
+  return {ok:!!t1 && !!t2 && t1!==t2, v:{topic1:t1, detail1:val("detail1"), topic2:t2, detail2:val("detail2"), sameStaff:!!(ss && ss.checked)}};
 }
 function pick(d,time){
   PICK={date:d.date, w:d.w, time, kind:kind()};
