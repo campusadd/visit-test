@@ -158,6 +158,16 @@ button{font:inherit;color:inherit}
 .rsv small{color:var(--muted);font-size:12px}
 .rsv button{border:1.5px solid var(--danger);background:transparent;color:var(--danger);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 .loading{color:var(--muted);text-align:center;padding:30px 0;font-size:14px}
+.hist{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:6px 16px}
+.histsum{margin:8px 0 4px;font-size:13px;color:var(--muted)}
+.histsum b{font-family:var(--f-num);font-weight:400;font-size:22px;color:var(--ok);margin:0 2px}
+.hrow{display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:center;padding:10px 0;border-top:1px dashed var(--line)}
+.hd{display:grid;line-height:1.2}
+.hd b{font-family:var(--f-num);font-weight:400;font-size:18px}
+.hd small{font-size:11px;color:var(--muted)}
+.hk{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.hkind{font-size:12px;font-weight:700;margin-right:4px}
+.htopic{font-size:11px;font-weight:700;background:var(--ok-soft);color:var(--ok);border-radius:999px;padding:1px 9px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 /* ---- 見た目の作り込み（WEBサイトの雰囲気のまま、少しだけ華やかに） ---- */
 .hero{position:relative;padding:4px 0 0;gap:0}
@@ -167,10 +177,20 @@ button{font:inherit;color:inherit}
 .blob.b1{width:64px;height:64px;background:var(--star);opacity:.9;top:-14px;right:22px}
 .blob.b2{width:22px;height:22px;background:var(--blue);opacity:.85;top:30px;right:6px}
 .blob.b3{width:120px;height:120px;border:1.5px solid var(--num);opacity:.45;bottom:-30px;left:-34px}
-.hero-card{position:relative;margin:-42px 14px 0;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:18px 18px 16px;display:grid;gap:8px;box-shadow:0 10px 30px -18px rgba(60,40,10,.35)}
-.hero-card .en{margin:0;font-family:var(--f-num);font-weight:300;font-size:30px;line-height:1;color:var(--num);letter-spacing:.04em}
-.hero-card h1{font-size:28px}
-.hero-card p{margin:0;color:var(--muted);font-size:13px}
+.hero-card{position:relative;margin:-38px 14px 0;background:var(--surface);border-radius:22px;padding:20px 20px 18px;display:grid;gap:10px;box-shadow:0 14px 34px -20px rgba(60,40,10,.45)}
+.hero-card .kicker{margin:0;display:flex;align-items:center;gap:8px;font-family:var(--f-num);font-weight:400;font-size:12px;letter-spacing:.32em;color:var(--blue)}
+.hero-card .kicker::before{content:"";width:12px;height:12px;background:var(--star);clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
+.hero-card .kicker::after{content:"";flex:1;height:1px;background:var(--line)}
+.hero-card .lead{margin:0;color:var(--muted);font-size:13px;line-height:1.8}
+.keyfacts{display:grid;grid-template-columns:1fr 1fr;margin:4px 0 0;border-top:1px solid var(--line)}
+.keyfacts div{padding:10px 0 0}
+.keyfacts div+div{border-left:1px solid var(--line);padding-left:16px}
+.keyfacts dt{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em}
+.keyfacts dd{margin:0;font-family:var(--f-num);font-weight:400;font-size:24px;line-height:1.2;color:var(--ink);letter-spacing:.02em}
+.keyfacts dd span{color:var(--ink)}
+.keyfacts dd > span:first-child{margin:0 2px;color:var(--muted)}
+.keyfacts dd small{font-family:var(--f-body);font-size:12px;font-weight:700;color:var(--muted);margin-right:4px}
+.hero-card h1{font-size:30px;font-weight:700;letter-spacing:.14em}
 .step{position:relative}
 .step .bgword{position:absolute;right:0;bottom:-2px;font-family:var(--f-num);font-weight:300;font-size:54px;line-height:1;letter-spacing:.06em;color:var(--line);pointer-events:none;user-select:none}
 .step .no,.step h2{position:relative}
@@ -246,14 +266,16 @@ button{font:inherit;color:inherit}
         <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span>
       </div>
       <div class="hero-card">
-        <span class="label">RESERVATION</span>
-        <p class="en">Book your visit</p>
+        <p class="kicker">RESERVATION</p>
         <h1>来館予約</h1>
-        <p>空いている日時を選んで、そのまま予約できます。<br>相談のあとも、閉館まで自由に過ごせます。</p>
-        <div class="info"><span>開館 <b>13:00〜17:00</b></span><span>予約は <b id="dl">前日15:00</b> まで</span></div>
+        <p class="lead">空いている日時を選んで、そのまま予約できます。<br>相談のあとも、閉館まで自由に過ごせます。</p>
+        <dl class="keyfacts">
+          <div><dt>開館時間</dt><dd>13:00<span>–</span>17:00</dd></div>
+          <div><dt>予約の締切</dt><dd><small>前日</small><span id="dl">15:00</span></dd></div>
+        </dl>
       </div>
     </header>
-    <div class="me" id="me" hidden><span id="meText"></span><button class="linkbtn" type="button" id="toMine">予約の確認<span class="n" id="mineN" hidden></span></button></div>
+    <div class="me" id="me" hidden><span id="meText"></span><button class="linkbtn" type="button" id="toMine">予約・来館の記録<span class="n" id="mineN" hidden></span></button></div>
     <div class="notice" id="notice" hidden></div>
     <div class="refask" id="refAsk" hidden></div>
 
@@ -269,7 +291,7 @@ button{font:inherit;color:inherit}
 
     <div class="step"><span class="bgword" aria-hidden="true">ACCESS</span><span class="no">03</span><h2>アクセス</h2></div>
     <div class="acc reveal">
-      <img class="photo" src="photo-access.jpg" alt="アイパスビルの入口と、Campus Addの白い旗" width="800" height="450" loading="lazy">
+      <img class="photo" src="photo-access.jpg" alt="Campus Addが入っているアイパスビルの外観" width="800" height="450" loading="lazy">
       <dl class="facts">
         <dt>住所</dt><dd>〒060-0051<br>北海道札幌市中央区南1条東3丁目10-13 アイパスビル3F</dd>
         <dt>最寄り駅</dt><dd>地下鉄東西線「バスセンター前駅」6番出口から徒歩約2分<small>大通方面からは、地下道を通って近くまで来られます</small></dd>
@@ -349,8 +371,10 @@ button{font:inherit;color:inherit}
   <!-- 4. 予約の確認・キャンセル -->
   <main id="v-mine" hidden>
     <button class="back" type="button" id="mBack">← 予約の画面へ</button>
-    <div class="step" style="margin-top:6px"><h2>予約の確認・キャンセル</h2></div>
+    <div class="step" style="margin-top:6px"><h2>これからの予約</h2></div>
     <div class="list" id="mList"></div>
+    <div class="step"><span class="bgword" aria-hidden="true">HISTORY</span><h2>これまでの来館</h2></div>
+    <div class="hist" id="mHist"></div>
   </main>
   <footer class="foot">
     <span class="brand"><img src="campus-add-logo.png" alt="Campus Add" width="300" height="98"></span>
@@ -407,7 +431,7 @@ function demoApi(){
   }
   const ok=x=>new Promise(r=>setTimeout(()=>r(x),250));
   return {
-    get: q => q.action==="me" ? ok({ok:true,registered:!!user,name:user?user.name:"",reservations:rsv.filter(r=>r.active),lastStaff:user?"亀田":"",reflect:user&&!reflected?[{id:"demo",date:days[0].date,time:"13:00",topic1:"ES作成",topic2:"面接練習"}]:[]}) : ok({ok:true,days,times,deadline:"15:00",demo:true}),
+    get: q => q.action==="me" ? ok({ok:true,registered:!!user,name:user?user.name:"",reservations:rsv.filter(r=>r.active),history:user?[{date:"2026/10/19",time:"13:00",kind:"相談",topic1:"面接練習",topic2:"ES作成"},{date:"2026/10/12",time:"14:30",kind:"相談",topic1:"ES作成",topic2:"面接練習"},{date:"2026/10/05",time:"15:00",kind:"場所利用"}]:[],visits:user?3:0,lastStaff:user?"亀田":"",reflect:user&&!reflected?[{id:"demo",date:days[0].date,time:"13:00",topic1:"ES作成",topic2:"面接練習"}]:[]}) : ok({ok:true,days,times,deadline:"15:00",demo:true}),
     post: b => {
       if(b.action==="reflect"){ reflected=true; return ok({ok:true}); }
       if(b.action==="cancel"){ const r=rsv.find(x=>x.id===b.id); if(r){ r.active=false; const d=days.find(x=>x.date===r.date); if(r.kind==="相談") d.consult.find(s=>s.time===r.time).left++; else d.place.left++; } return ok({ok:true}); }
@@ -553,7 +577,7 @@ function reveal(root){ (root||document).querySelectorAll(".reveal:not(.in)").for
 
 function renderMe(){
   const n=ME.reservations.length;
-  $("#me").hidden = !ME.registered && !n;
+  $("#me").hidden = !ME.registered && !n && !(ME.history||[]).length;
   $("#meText").replaceChildren(...(ME.registered ? [el("b",{textContent:ME.name}),"さん"] : ["予約があります"]));
   $("#mineN").hidden=!n; $("#mineN").textContent=n;
 }
@@ -562,7 +586,7 @@ function load(){
   return Promise.all([API.get({action:"slots"}), API.get({action:"me",uid:UID})]).then(([s,m])=>{
     if(!s.ok) throw new Error(s.error);
     DATA=s; if(m && m.ok) ME=m;
-    $("#dl").textContent="前日"+(s.deadline||"15:00");
+    $("#dl").textContent=s.deadline||"15:00";
     const tb=$("#testbar");
     if(s.demo){ tb.textContent="お試しモード：仮のデータで動いています。予約しても実際には登録されません。"; tb.hidden=false; }
     else if(s.test){ tb.textContent="テスト版：この端末を1人の利用者として扱っています（LINE連携の前のため）"; tb.hidden=false; }
@@ -700,7 +724,22 @@ function renderMine(){
     return el("div",{className:"rsv"},[el("div",{},[el("b",{textContent:dateLabel(r.date,wOf(r.date))+" "+r.time}), el("small",{textContent:r.kind==="相談"?"相談・施設利用":"施設利用のみ"})]), btn]);
   }));
 }
-$("#toMine").onclick=()=>{ renderMine(); show("mine"); };
+// これまでの来館（新しい順）
+function renderHistory(){
+  const box=$("#mHist"), list=ME.history||[];
+  if(!list.length){ box.replaceChildren(el("div",{className:"empty",textContent:"来館の記録はまだありません。"})); return; }
+  box.replaceChildren(
+    el("p",{className:"histsum"},["これまでに ",el("b",{textContent:String(ME.visits||list.length)})," 回 来館しました"]),
+    ...list.map(r=>{
+      const [,mm,dd]=r.date.split("/").map(Number);
+      return el("div",{className:"hrow"},[
+        el("span",{className:"hd"},[el("b",{textContent:mm+"/"+dd}), el("small",{textContent:wOf(r.date)+" "+r.time})]),
+        el("span",{className:"hk"},[el("span",{className:"hkind",textContent:r.kind==="相談"?"相談・施設利用":"施設利用のみ"}),
+          ...[r.topic1,r.topic2].filter(Boolean).map(t=>el("span",{className:"htopic",textContent:t}))])
+      ]);
+    }));
+}
+$("#toMine").onclick=()=>{ renderMine(); renderHistory(); show("mine"); };
 $("#mBack").onclick=()=>show("home");
 $("#cBack").onclick=()=>show("home");
 $("#dHome").onclick=()=>show("home");
