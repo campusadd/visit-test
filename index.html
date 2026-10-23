@@ -412,7 +412,9 @@ const UID = deviceUid();
 
 // ---- 受付係（管理表のスクリプト）とのやり取り。URLが空のときは、仮のデータで動くお試しモード ----
 // アドレスの最後に ?demo=1 を付けると、管理表につながず仮のデータで動く（スマホで画面を試す用）
-const DEMO = /[?&]demo=1/.test(location.search);
+// ?demo=1：初めての学生として、?demo=2：2回目以降の学生（前回の担当・振り返り・来館の記録あり）として開く
+const DEMO = /[?&]demo=[12](?!\d)/.test(location.search);
+const DEMO_RETURNING = /[?&]demo=2(?!\d)/.test(location.search);
 const API = CONFIG.apiUrl && !DEMO ? {
   get: q => fetch(CONFIG.apiUrl+"?"+new URLSearchParams(q),{cache:"no-store"}).then(r=>r.json()),
   post: b => fetch(CONFIG.apiUrl,{method:"POST",body:JSON.stringify(b)}).then(r=>r.json())
@@ -422,7 +424,7 @@ function demoApi(){
   const pad=n=>String(n).padStart(2,"0"), ymd=d=>`${d.getUTCFullYear()}/${pad(d.getUTCMonth()+1)}/${pad(d.getUTCDate())}`;
   const times=["13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30"];
   const jst=new Date(Date.now()+9*3600e3), start=new Date(Date.UTC(jst.getUTCFullYear(),jst.getUTCMonth(),jst.getUTCDate()));
-  const days=[], rsv=[]; let user=null, seed=7, reflected=false;
+  const days=[], rsv=[]; let user=DEMO_RETURNING?{name:"テスト 花子"}:null, seed=7, reflected=false;
   const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
   for(let i=1;i<=28;i++){
     const d=new Date(start.getTime()+i*864e5), w=d.getUTCDay();
