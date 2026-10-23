@@ -136,6 +136,7 @@ button{font:inherit;color:inherit}
 .rules{margin:0;padding:0 0 0 1.1em;font-size:12px;color:var(--muted);display:grid;gap:4px}
 .agree{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;cursor:pointer}
 .agree input{width:20px;height:20px;accent-color:var(--accent)}
+.privacy{margin:0;font-size:12px;color:var(--muted);white-space:pre-line;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;max-height:200px;overflow:auto}
 /* WEBサイトと同じ、緑の丸いボタン＋矢印 */
 .cta{display:flex;justify-content:center;align-items:center;gap:8px;width:100%;border:none;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px;letter-spacing:.06em;padding:15px 22px;cursor:pointer;text-decoration:none}
 .cta::after{content:"→"}
@@ -312,6 +313,8 @@ const WD = "日月火水木金土";
 const GRADS = ["28卒","29卒","30卒","その他"];
 // 相談で選んでもらう項目（管理表のスクリプトの TOPICS と同じ）
 const TOPICS = ["ES作成","面接練習","自己分析","企業・業界研究","進路相談","就活の進め方全般"];
+// 個人情報の取り扱い（初回登録のときだけ同意をもらう）
+const PRIVACY = "株式会社エス・イー・ジャパン【Campus Add】（以下、当社）は、ご入力いただいた個人情報を次の目的で利用します。\n1. 来館予約の受付と、予約に関するご連絡\n2. 相談内容・振り返りの記録と、スタッフ間での引き継ぎ（より良い相談のため）\n3. 当社（Campus Add）からの、就職活動に関する講座・イベント・個別相談のご案内\n\n法令に基づく場合を除き、ご本人の同意なく第三者へ提供することはありません。協賛企業などへ情報を提供する場合は、その都度、提供する内容と提供先をお知らせし、ご本人の同意をいただいたうえで行います。\n\n【お問い合わせ窓口】株式会社エス・イー・ジャパン\nTEL：011-577-1396　MAIL：info@sejapan.jp\nプライバシーポリシー：https://www.campus-add.com/privacy-policy";
 
 // ---- 利用者の見分け方（テスト版：この端末を1人として扱う。LINE連携後はLINEのIDに置き換える） ----
 function deviceUid(){
@@ -529,7 +532,11 @@ function renderProfile(){
     el("div",{className:"q",id:"f-p-grad"},[el("span",{className:"ql"},["卒業予定",el("span",{className:"req",textContent:"必須"})]),
       el("div",{className:"grads"},GRADS.map((g,i)=>el("label",{},[el("input",{type:"radio",name:"grad",value:g,id:"g"+i}),el("span",{textContent:g})]))), el("p",{className:"qe",hidden:true})]),
     el("div",{className:"q",id:"f-p-visited"},[el("span",{className:"ql"},["Campus Addに来館したことはありますか？",el("span",{className:"req",textContent:"必須"})]),
-      el("div",{className:"grads"},["はい","いいえ"].map((g,i)=>el("label",{},[el("input",{type:"radio",name:"visited",value:g,id:"vs"+i}),el("span",{textContent:g})]))), el("p",{className:"qe",hidden:true})])
+      el("div",{className:"grads"},["はい","いいえ"].map((g,i)=>el("label",{},[el("input",{type:"radio",name:"visited",value:g,id:"vs"+i}),el("span",{textContent:g})]))), el("p",{className:"qe",hidden:true})]),
+    // 個人情報の取り扱い（初回登録のときだけ）
+    el("div",{className:"q",id:"f-p-consent"},[el("span",{className:"ql"},["個人情報の取り扱いについて",el("span",{className:"req",textContent:"必須"})]),
+      el("p",{className:"privacy",textContent:PRIVACY}),
+      el("label",{className:"agree"},[el("input",{type:"checkbox",id:"consent"}),"上記に同意する"]), el("p",{className:"qe",hidden:true})])
   );
 }
 // 相談の予約だけ：最も解決したいこと・2番目に解決したいこと（それぞれ具体的な内容は任意）
@@ -584,6 +591,7 @@ function readProfile(){
   setBad("f-p-grad", p.grad?"":"選んでください。"); if(!p.grad) good=false;
   const vs=document.querySelector('input[name="visited"]:checked'); p.visited=vs?vs.value:"";
   setBad("f-p-visited", p.visited?"":"選んでください。"); if(!p.visited) good=false;
+  p.consent=$("#consent").checked; setBad("f-p-consent", p.consent?"":"同意していただくと予約できます。"); if(!p.consent) good=false;
   return {ok:good, profile:p};
 }
 $("#cForm").addEventListener("submit", async e=>{
