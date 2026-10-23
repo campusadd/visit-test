@@ -618,7 +618,7 @@ function renderProfile(){
     field("p-name","お名前",{ph:"例）北海 太郎"}),
     field("p-kana","ふりがな",{ph:"例）ほっかい たろう"}),
     field("p-tel","電話番号",{type:"tel",ph:"例）09012345678",mode:"tel",help:"ハイフンなしの数字だけで入力できます"}),
-    field("p-univ","大学名",{ph:"例）北海学園大学"}),
+    field("p-univ","大学名",{ph:"例）○○大学"}),
     field("p-dept","学部・学科",{ph:"例）経済学部 経済学科"}),
     el("div",{className:"q",id:"f-p-grad"},[el("span",{className:"ql"},["卒業予定",el("span",{className:"req",textContent:"必須"})]),
       el("div",{className:"grads"},GRADS.map((g,i)=>el("label",{},[el("input",{type:"radio",name:"grad",value:g,id:"g"+i}),el("span",{textContent:g})]))), el("p",{className:"qe",hidden:true})]),
