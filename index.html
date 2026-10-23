@@ -344,8 +344,8 @@ function demoApi(){
     const d=new Date(start.getTime()+i*864e5), w=d.getUTCDay();
     if(w===0||w===6||rnd()<.12) continue; // 土日と、ときどき休館
     if(i===1 && jst.getUTCHours()>=15) continue; // 前日15時の締切を過ぎた明日
-    const cap=rnd()<.2?1:2;
-    days.push({date:ymd(d), w:WD[w], staff:rnd()<.3?"亀田・非常勤アドバイザー":"赤坂・亀田", consult:times.map(t=>{ const used=Math.min(cap, rnd()<.35?Math.floor(rnd()*3):0); return {time:t,cap,left:cap-used}; }), place:{cap:4,left:Math.floor(rnd()*5)}});
+    const cap=2, staff=rnd()<.3?"亀田・非常勤アドバイザー":"赤坂・亀田", away=days.length===1; // 2日目は「亀田 15:00-16:00 不在」の例
+    days.push({date:ymd(d), w:WD[w], staff, note:away?"亀田は15:00〜16:00不在":"", consult:times.map(t=>{ const out=away&&(t==="15:00"||t==="15:30"); const c=out?1:cap; const used=Math.min(c, rnd()<.35?Math.floor(rnd()*3):0); return {time:t,cap:c,left:c-used,staff:out?staff.replace(/・?亀田・?/,""):staff}; }), place:{cap:4,left:Math.floor(rnd()*5)}});
   }
   const ok=x=>new Promise(r=>setTimeout(()=>r(x),250));
   return {
@@ -414,7 +414,7 @@ function renderDays(){
     }
     return el("div",{className:"day"},[
       el("div",{className:"dh"},[el("b",{},[dateLabel(d.date,d.w)]), sum]),
-      d.staff ? el("div",{className:"staff",textContent:"担当："+d.staff}) : null,
+      d.staff ? el("div",{className:"staff",textContent:"担当："+d.staff+(d.note?`（${d.note}）`:"")}) : null,
       el("div",{className:"chips"},chips)
     ]);
   }));
@@ -510,7 +510,7 @@ function load(){
 
 // ---- 2. 確認・入力 ----
 function pickText(p){
-  return [el("span",{className:"k",textContent:p.kind==="相談"?"相談・施設利用":"施設利用のみ"}), el("span",{className:"d",textContent:dateLabel(p.date,p.w)+" "+p.time}), el("span",{className:"x",textContent:p.kind==="相談"?"相談は30分ほど。そのあとも閉館（17:00）まで使えます":"来館する時間です。閉館（17:00）まで館内を使えます"})];
+  return [el("span",{className:"k",textContent:p.kind==="相談"?"相談・施設利用":"施設利用のみ"}), el("span",{className:"d",textContent:dateLabel(p.date,p.w)+" "+p.time}), el("span",{className:"x",textContent:p.kind==="相談"?"相談は30分ほど。そのあとも閉館（17:00）まで使えます":"来館する時間です。閉館（17:00）まで館内を使えます"}), p.kind==="相談" && p.staff ? el("span",{className:"x",textContent:"この時間の担当："+p.staff}) : null].filter(Boolean);
 }
 function field(id,label,{type="text",ph="",help="",mode=""}={}){
   const inp=el("input",{type,id,placeholder:ph,maxLength:60}); if(mode) inp.inputMode=mode;
@@ -546,8 +546,10 @@ function topicField(no,label){
 function renderTopics(){
   const box=$("#topics");
   if(PICK.kind!=="相談"){ box.replaceChildren(); return; }
-  const same = ME.lastStaff ? el("div",{className:"q"},[el("label",{className:"same"},[el("input",{type:"checkbox",id:"sameStaff"}), el("span",{},[`前回の担当（${ME.lastStaff}）を希望する`, el("br"), el("small",{className:"qh",style:"margin:0",textContent:"任意です。できるだけ調整しますが、ご希望に沿えない場合もあります。"})])])]) : null;
-  box.replaceChildren(el("p",{className:"sec",textContent:"相談したいことを教えてください"}), topicField(1,"相談で最も解決したいこと"), topicField(2,"2番目に解決したいこと"), same);
+  const here = (PICK.staff||"").split("・");
+  const absentNote = ME.lastStaff && PICK.staff && !here.includes(ME.lastStaff) ? el("p",{className:"qh",style:"margin:0",textContent:`前回の担当（${ME.lastStaff}）は、この時間は担当していません。`}) : null;
+  const same = absentNote || (ME.lastStaff ? el("div",{className:"q"},[el("label",{className:"same"},[el("input",{type:"checkbox",id:"sameStaff"}), el("span",{},[`前回の担当（${ME.lastStaff}）を希望する`, el("br"), el("small",{className:"qh",style:"margin:0",textContent:"任意です。できるだけ調整しますが、ご希望に沿えない場合もあります。"})])])]) : null);
+  box.replaceChildren(...[el("p",{className:"sec",textContent:"相談したいことを教えてください"}), topicField(1,"相談で最も解決したいこと"), topicField(2,"2番目に解決したいこと"), same].filter(Boolean));
   box.style.display="grid"; box.style.gap="12px";
 }
 function readTopics(){
@@ -560,7 +562,8 @@ function readTopics(){
   return {ok:!!t1 && !!t2 && t1!==t2, v:{topic1:t1, detail1:val("detail1"), topic2:t2, detail2:val("detail2"), sameStaff:!!(ss && ss.checked)}};
 }
 function pick(d,time){
-  PICK={date:d.date, w:d.w, time, kind:kind()};
+  const slot=(d.consult||[]).find(s=>s.time===time);
+  PICK={date:d.date, w:d.w, time, kind:kind(), staff: slot && slot.staff ? slot.staff : (d.staff||"")};
   $("#cPick").replaceChildren(...pickText(PICK));
   renderTopics();
   renderProfile();
