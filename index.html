@@ -644,7 +644,9 @@ function renderTopics(){
   const here = (PICK.staff||"").split("・");
   // 前回が非常勤の方だと、開館日の担当の書き方（名前／非常勤アドバイザー）と一致しないことがあるので、その場合は判定しない
   const absentNote = ME.lastStaff && ME.lastStaff !== "非常勤アドバイザー" && PICK.staff && !here.includes(ME.lastStaff) ? el("p",{className:"qh",style:"margin:0",textContent:`前回の担当（${ME.lastStaff}）は、この時間は担当していません。`}) : null;
-  const same = absentNote || (ME.lastStaff ? el("div",{className:"q"},[el("label",{className:"same"},[el("input",{type:"checkbox",id:"sameStaff"}), el("span",{},[`前回の担当（${ME.lastStaff}）を希望する`, el("br"), el("small",{className:"qh",style:"margin:0",textContent:"任意です。できるだけ調整しますが、ご希望に沿えない場合もあります。"})])])]) : null);
+  // 同じ時間に、同じ担当への希望が先に入っているとき（先着順）
+  const takenNote = !absentNote && ME.lastStaff && (PICK.wanted||[]).includes(ME.lastStaff) ? el("p",{className:"qh",style:"margin:0",textContent:`この時間は、${ME.lastStaff}への担当希望がすでに入っています。${ME.lastStaff}の担当を希望する場合は、別の時間を選んでください。`}) : null;
+  const same = absentNote || takenNote || (ME.lastStaff ? el("div",{className:"q"},[el("label",{className:"same"},[el("input",{type:"checkbox",id:"sameStaff"}), el("span",{},[`前回の担当（${ME.lastStaff}）を希望する`, el("br"), el("small",{className:"qh",style:"margin:0",textContent:"任意です。できるだけ調整しますが、ご希望に沿えない場合もあります。"})])])]) : null);
   box.replaceChildren(...[el("p",{className:"sec",textContent:"相談したいことを教えてください"}), topicField(1,"相談で最も解決したいこと"), topicField(2,"2番目に解決したいこと"), same].filter(Boolean));
   box.style.display="grid"; box.style.gap="12px";
 }
@@ -659,7 +661,7 @@ function readTopics(){
 }
 function pick(d,time){
   const slot=(d.consult||[]).find(s=>s.time===time);
-  PICK={date:d.date, w:d.w, time, kind:kind(), staff: slot && slot.staff ? slot.staff : (d.staff||"")};
+  PICK={date:d.date, w:d.w, time, kind:kind(), staff: slot && slot.staff ? slot.staff : (d.staff||""), wanted: slot && slot.wanted ? slot.wanted : []};
   $("#cPick").replaceChildren(...pickText(PICK));
   renderTopics();
   renderProfile();
