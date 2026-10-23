@@ -320,6 +320,7 @@ button{font:inherit;color:inherit}
   <main id="v-confirm" hidden>
     <button class="back" type="button" id="cBack">← 日時を選び直す</button>
     <div class="pick" id="cPick"></div>
+    <div id="sameBox" style="margin-top:10px"></div>
     <form class="form" id="cForm" novalidate>
       <div id="topics"></div>
       <div id="profile"></div>
@@ -640,14 +641,16 @@ function topicField(no,label){
 }
 function renderTopics(){
   const box=$("#topics");
-  if(PICK.kind!=="相談"){ box.replaceChildren(); return; }
+  if(PICK.kind!=="相談"){ box.replaceChildren(); $("#sameBox").replaceChildren(); return; }
   const here = (PICK.staff||"").split("・");
   // 前回が非常勤の方だと、開館日の担当の書き方（名前／非常勤アドバイザー）と一致しないことがあるので、その場合は判定しない
   const absentNote = ME.lastStaff && ME.lastStaff !== "非常勤アドバイザー" && PICK.staff && !here.includes(ME.lastStaff) ? el("p",{className:"qh",style:"margin:0",textContent:`前回の担当（${ME.lastStaff}）は、この時間は担当していません。`}) : null;
   // 同じ時間に、同じ担当への希望が先に入っているとき（先着順）
   const takenNote = !absentNote && ME.lastStaff && (PICK.wanted||[]).includes(ME.lastStaff) ? el("p",{className:"qh",style:"margin:0",textContent:`この時間は、${ME.lastStaff}への担当希望がすでに入っています。${ME.lastStaff}の担当を希望する場合は、別の時間を選んでください。`}) : null;
   const same = absentNote || takenNote || (ME.lastStaff ? el("div",{className:"q"},[el("label",{className:"same"},[el("input",{type:"checkbox",id:"sameStaff"}), el("span",{},[`前回の担当（${ME.lastStaff}）を希望する`, el("br"), el("small",{className:"qh",style:"margin:0",textContent:"任意です。できるだけ調整しますが、ご希望に沿えない場合もあります。"})])])]) : null);
-  box.replaceChildren(...[el("p",{className:"sec",textContent:"相談したいことを教えてください"}), topicField(1,"相談で最も解決したいこと"), topicField(2,"2番目に解決したいこと"), same].filter(Boolean));
+  box.replaceChildren(el("p",{className:"sec",textContent:"相談したいことを教えてください"}), topicField(1,"相談で最も解決したいこと"), topicField(2,"2番目に解決したいこと"));
+  // 担当の希望は、日時の枠（この時間の担当）のすぐ下に出す
+  $("#sameBox").replaceChildren(...[same].filter(Boolean));
   box.style.display="grid"; box.style.gap="12px";
 }
 function readTopics(){
