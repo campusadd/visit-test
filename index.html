@@ -116,7 +116,7 @@ button{font:inherit;color:inherit}
 .pick{background:var(--surface);border:1.5px solid var(--accent);border-radius:18px;padding:14px 18px;display:grid;gap:2px}
 .pick .k{font-size:12px;font-weight:700;color:var(--ok);letter-spacing:.06em}
 .pick .d{font-size:21px;font-weight:700;letter-spacing:.04em}
-.pick .x{font-size:12px;color:var(--muted)}
+.pick .x{font-size:12px;color:var(--muted);line-height:1.7;margin-top:2px}
 .form{display:grid;gap:12px;margin-top:16px}
 .q{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 16px;display:grid;gap:8px;margin:0;min-width:0}
 .q.bad{border-color:var(--danger)}
@@ -282,7 +282,7 @@ button{font:inherit;color:inherit}
 
     <div class="step"><span class="bgword" aria-hidden="true">CHOOSE</span><span class="no">01</span><h2>使い方を選ぶ</h2></div>
     <div class="kinds" role="radiogroup" aria-label="使い方">
-      <label class="kind"><input type="radio" name="kind" value="相談" checked><div><span class="ph"><img src="photo-consult.jpg" alt="" width="800" height="533" loading="lazy"></span><div class="tx"><b>相談・施設利用</b><small>ES添削・面接練習・進路相談など（30分ほど）。相談のあとも閉館まで使えます</small></div></div></label>
+      <label class="kind"><input type="radio" name="kind" value="相談" checked><div><span class="ph"><img src="photo-consult.jpg" alt="" width="800" height="533" loading="lazy"></span><div class="tx"><b>相談・施設利用</b><small>ES添削・面接練習・進路相談など（目安30分）。相談のあとも閉館まで使えます</small></div></div></label>
       <label class="kind"><input type="radio" name="kind" value="場所利用"><div><span class="ph"><img src="photo-seat.jpg" alt="" width="800" height="533" loading="lazy"></span><div class="tx"><b>施設利用のみ</b><small>相談なしで、ES作成や企業研究などに館内を使えます</small></div></div></label>
     </div>
 
@@ -326,7 +326,7 @@ button{font:inherit;color:inherit}
       <div class="q"><label class="ql" for="memo">連絡事項<span class="opt">任意</span></label><p class="qh">遅れて来る可能性など、スタッフに伝えておきたいことがあれば書いてください。</p><textarea id="memo" maxlength="500"></textarea></div>
       <div class="q" id="f-agree">
         <ul class="rules">
-          <li>予約は「来館する時間」の予約です。相談は30分ほどが目安で、そのあとも閉館（17:00）まで自由に過ごせます。</li>
+          <li>予約は「来館する時間」の予約です。相談時間の目安は30分間です。相談のあとも、閉館（17:00）まで館内で就活を進められます。アドバイザーの手が空いていれば続けて相談できることもあるので、気軽に声をかけてください。</li>
           <li>相談のあとは、振り返りシートへの入力をお願いしています（スマホで1分ほど）。施設利用のみの場合は不要です。</li>
           <li>友達と一緒に来たい場合や、遅れる可能性がある場合は、事前にCampus Addの公式LINEでご相談ください。</li>
           <li>相談の内容や来館人数によって、お待ちいただく場合があります。</li>
@@ -601,7 +601,7 @@ function load(){
 
 // ---- 2. 確認・入力 ----
 function pickText(p){
-  return [el("span",{className:"k",textContent:p.kind==="相談"?"相談・施設利用":"施設利用のみ"}), el("span",{className:"d",textContent:dateLabel(p.date,p.w)+" "+p.time}), el("span",{className:"x",textContent:p.kind==="相談"?"相談は30分ほど。そのあとも閉館（17:00）まで使えます":"来館する時間です。閉館（17:00）まで館内を使えます"}), p.kind==="相談" && p.staff ? el("span",{className:"x",textContent:"この時間の担当："+p.staff}) : null].filter(Boolean);
+  return [el("span",{className:"k",textContent:p.kind==="相談"?"相談・施設利用":"施設利用のみ"}), el("span",{className:"d",textContent:dateLabel(p.date,p.w)+" "+p.time}), el("span",{className:"x",textContent:p.kind==="相談"?"相談時間の目安は30分間です。相談のあとも、閉館（17:00）まで館内で就活を進められます。アドバイザーの手が空いていれば続けて相談できることもあるので、気軽に声をかけてください。":"来館する時間です。閉館（17:00）まで館内を使えます"}), p.kind==="相談" && p.staff ? el("span",{className:"x",textContent:"この時間の担当："+p.staff}) : null].filter(Boolean);
 }
 function field(id,label,{type="text",ph="",help="",mode=""}={}){
   const inp=el("input",{type,id,placeholder:ph,maxLength:60}); if(mode) inp.inputMode=mode;
