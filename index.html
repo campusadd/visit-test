@@ -149,6 +149,8 @@ button{font:inherit;color:inherit}
 
 .done{display:grid;gap:16px;padding:18px 0}
 .done .photo{aspect-ratio:21/9}
+.dline{background:var(--mark-soft);color:var(--mark-ink);border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;line-height:1.7}
+.dline a{color:inherit}
 .done h2{font-size:24px}
 .done p{margin:0;font-size:14px;color:var(--muted)}
 .done .cta{max-width:340px;justify-self:center}
@@ -348,6 +350,7 @@ button{font:inherit;color:inherit}
       <span class="label">THANK YOU</span>
       <h2>予約が確定しました</h2>
       <div class="pick" id="dPick"></div>
+      <p class="dline" id="dLine" hidden></p>
       <img class="photo" src="photo-done.jpg" alt="Campus Addのテーブルに置かれたWelcomeの飾り" width="800" height="533" loading="lazy">
       <p>当日は、予約した時間にCampus Addへお越しください。<br>キャンセルは、このページの「予約の確認」からできます。</p>
       <button class="cta ghost" type="button" id="dHome">続けて別の日も予約する</button>
@@ -387,7 +390,7 @@ button{font:inherit;color:inherit}
 
 <script src="config.js"></script>
 <script>
-const CONFIG = Object.assign({apiUrl:"", lineUrl:""}, window.VISIT_CONFIG || {});
+const CONFIG = Object.assign({apiUrl:"", lineUrl:"", liffId:""}, window.VISIT_CONFIG || {});
 const $ = s => document.querySelector(s);
 const el = (tag, props={}, kids=[]) => { const n=document.createElement(tag); Object.assign(n, props); for(const k of [].concat(kids)) if(k!=null) n.append(k); return n; };
 const WD = "日月火水木金土";
@@ -397,7 +400,9 @@ const TOPICS = ["ES作成","面接練習","自己分析","企業・業界研究"
 // 個人情報の取り扱い（初回登録のときだけ同意をもらう）
 const PRIVACY = "株式会社エス・イー・ジャパン【Campus Add】（以下、当社）は、ご入力いただいた個人情報を次の目的で利用します。\n1. 来館予約の受付と、予約に関するご連絡\n2. 相談内容・振り返りの記録と、スタッフ間での引き継ぎ（より良い相談のため）\n3. 当社（Campus Add）からの、就職活動に関する講座・イベント・個別相談のご案内\n\n法令に基づく場合を除き、ご本人の同意なく第三者へ提供することはありません。協賛企業などへ情報を提供する場合は、その都度、提供する内容と提供先をお知らせし、ご本人の同意をいただいたうえで行います。\n\n【お問い合わせ窓口】株式会社エス・イー・ジャパン\nTEL：011-577-1396　MAIL：info@sejapan.jp\nプライバシーポリシー：https://www.campus-add.com/privacy-policy";
 
-// ---- 利用者の見分け方（テスト版：この端末を1人として扱う。LINE連携後はLINEのIDに置き換える） ----
+// ---- 利用者の見分け方 ----
+// LINEから開いた人（liffId あり）：LINEのIDトークンを受付係に渡し、受付係がLINEに確かめる
+// liffId が空のとき：この端末を1人として扱う（テスト版）
 function deviceUid(){
   let id=null;
   try{ id=localStorage.getItem("ca.visit.uid"); }catch(e){}
@@ -408,7 +413,31 @@ function deviceUid(){
   }
   return id;
 }
-const UID = deviceUid();
+let UID = "", ID_TOKEN = "", FRIEND = null;
+const who = () => ID_TOKEN ? {idToken:ID_TOKEN} : {uid:UID||(UID=deviceUid())};
+
+// LINEにログインして、IDトークンをもらう。ログイン画面へ移るときは false
+function loadScript(src){ return new Promise((ok,ng)=>{ const s=document.createElement("script"); s.src=src; s.charset="utf-8"; s.onload=ok; s.onerror=ng; document.head.append(s); }); }
+async function startLine(){
+  if(!CONFIG.liffId || DEMO || !CONFIG.apiUrl) return true;
+  await loadScript("https://static.line-scdn.net/liff/edge/2/sdk.js");
+  await liff.init({liffId:CONFIG.liffId});
+  if(!liff.isLoggedIn()){ liff.login({redirectUri:location.href}); return false; }
+  ID_TOKEN = liff.getIDToken() || "";
+  if(!ID_TOKEN) throw new Error("no id token");
+  try{ FRIEND = (await liff.getFriendship()).friendFlag; }catch(e){}
+  return true;
+}
+// LINEでの確認の期限が切れたとき：開き直して新しいトークンをもらう（何度も繰り返さないよう、1分に1回まで）
+function relogin(){
+  let last=0; try{ last=+sessionStorage.getItem("ca.visit.relogin")||0; }catch(e){}
+  if(Date.now()-last<60e3 || !window.liff) return false;
+  try{ sessionStorage.setItem("ca.visit.relogin", String(Date.now())); }catch(e){}
+  if(liff.isInClient()){ location.reload(); return true; }
+  try{ liff.logout(); }catch(e){}
+  liff.login({redirectUri:location.href});
+  return true;
+}
 
 // ---- 受付係（管理表のスクリプト）とのやり取り。URLが空のときは、仮のデータで動くお試しモード ----
 // アドレスの最後に ?demo=1 を付けると、管理表につながず仮のデータで動く（スマホで画面を試す用）
@@ -417,7 +446,7 @@ const DEMO = /[?&]demo=[12](?!\d)/.test(location.search);
 const DEMO_RETURNING = /[?&]demo=2(?!\d)/.test(location.search);
 const API = CONFIG.apiUrl && !DEMO ? {
   get: q => fetch(CONFIG.apiUrl+"?"+new URLSearchParams(q),{cache:"no-store"}).then(r=>r.json()),
-  post: b => fetch(CONFIG.apiUrl,{method:"POST",body:JSON.stringify(b)}).then(r=>r.json())
+  post: b => fetch(CONFIG.apiUrl,{method:"POST",body:JSON.stringify(b)}).then(r=>r.json()).then(r=>{ if(r && r.relogin && relogin()) return new Promise(()=>{}); return r; })
 } : demoApi();
 
 function demoApi(){
@@ -562,7 +591,7 @@ $("#rForm").addEventListener("submit", async e=>{
   if(!good){ const bad=document.querySelector("#rForm .q.bad"); if(bad) bad.scrollIntoView({behavior:"smooth",block:"center"}); return; }
   const btn=$("#rSend"), err=$("#rErr"); sending=true; btn.disabled=true; btn.textContent="送っています…"; err.hidden=true;
   try{
-    const r=await API.post({action:"reflect", uid:UID, id:REF.id, ...v});
+    const r=await API.post({action:"reflect", ...who(), id:REF.id, ...v});
     if(!r.ok) throw new Error(r.error);
     $("#rForm").hidden=true; $("#rDone").hidden=false; window.scrollTo(0,0);
     load();
@@ -587,13 +616,13 @@ function renderMe(){
 }
 
 function load(){
-  return Promise.all([API.get({action:"slots"}), API.get({action:"me",uid:UID})]).then(([s,m])=>{
+  return Promise.all([API.get({action:"slots"}), (ID_TOKEN ? API.post({action:"me",...who()}) : API.get({action:"me",...who()}))]).then(([s,m])=>{
     if(!s.ok) throw new Error(s.error);
     DATA=s; if(m && m.ok) ME=m;
     $("#dl").textContent=s.deadline||"15:00";
     const tb=$("#testbar");
     if(s.demo){ tb.textContent="お試しモード：仮のデータで動いています。予約しても実際には登録されません。"; tb.hidden=false; }
-    else if(s.test){ tb.textContent="テスト版：この端末を1人の利用者として扱っています（LINE連携の前のため）"; tb.hidden=false; }
+    else if(s.test){ tb.textContent=ID_TOKEN?"テスト版：LINEのアカウントで本人を確認しています（スタッフの試し用）":"テスト版：この端末を1人の利用者として扱っています"; tb.hidden=false; }
     $("#notice").hidden=true;
     renderMe(); renderRefAsk(); renderDays(); reveal();
   }).catch(err=>{
@@ -699,7 +728,7 @@ $("#cForm").addEventListener("submit", async e=>{
   if(!tp.ok || !pr.ok || !agreed){ const bad=document.querySelector("#cForm .q.bad"); if(bad) bad.scrollIntoView({behavior:"smooth",block:"center"}); return; }
   const btn=$("#cSend"), err=$("#cErr"); sending=true; btn.disabled=true; btn.textContent="予約しています…"; err.hidden=true;
   try{
-    const r=await API.post({action:"reserve", uid:UID, date:PICK.date, time:PICK.time, kind:PICK.kind, memo:$("#memo").value, profile:pr.profile, ...tp.v});
+    const r=await API.post({action:"reserve", ...who(), date:PICK.date, time:PICK.time, kind:PICK.kind, memo:$("#memo").value, profile:pr.profile, ...tp.v});
     if(!r.ok){
       if(r.needProfile){ ME.registered=false; renderProfile(); }
       err.textContent=r.error||"予約できませんでした。"; err.hidden=false; err.scrollIntoView({behavior:"smooth",block:"center"});
@@ -708,6 +737,7 @@ $("#cForm").addEventListener("submit", async e=>{
     }
     ME.registered=true; if(r.name) ME.name=r.name;
     $("#dPick").replaceChildren(...pickText(PICK));
+    renderDoneLine(r.notified);
     show("done");
     load();
   }catch(x){
@@ -716,6 +746,15 @@ $("#cForm").addEventListener("submit", async e=>{
     sending=false; btn.disabled=false; btn.textContent="この内容で予約する";
   }
 });
+
+// 予約完了の画面：LINEに確認を送れたか／友だち追加の案内
+function renderDoneLine(notified){
+  const box=$("#dLine");
+  if(notified) box.replaceChildren("予約の確認をLINEに送りました。前日の15時ごろにも、LINEでお知らせします。");
+  else if(ID_TOKEN && FRIEND===false && CONFIG.lineUrl) box.replaceChildren("Campus Addの公式LINEを友だち追加すると、予約の確認と前日のお知らせがLINEに届きます。", el("br"), el("a",{href:CONFIG.lineUrl,target:"_blank",rel:"noopener",textContent:"友だち追加する"}));
+  else box.replaceChildren();
+  box.hidden=!box.childNodes.length;
+}
 
 // ---- 4. 予約の確認・キャンセル ----
 function renderMine(){
@@ -726,7 +765,7 @@ function renderMine(){
     btn.onclick=async()=>{
       if(!confirm(dateLabel(r.date,wOf(r.date))+" "+r.time+" の予約をキャンセルしますか？")) return;
       btn.disabled=true; btn.textContent="処理中…";
-      try{ const x=await API.post({action:"cancel",uid:UID,id:r.id}); if(!x.ok) throw new Error(x.error); await load(); renderMine(); }
+      try{ const x=await API.post({action:"cancel",...who(),id:r.id}); if(!x.ok) throw new Error(x.error); await load(); renderMine(); }
       catch(e){ alert(e.message||"キャンセルできませんでした。LINEでご連絡ください。"); btn.disabled=false; btn.textContent="キャンセル"; }
     };
     return el("div",{className:"rsv"},[el("div",{},[el("b",{textContent:dateLabel(r.date,wOf(r.date))+" "+r.time}), el("small",{textContent:r.kind==="相談"?"キャンアドで相談":"スペース使用"})]), btn]);
@@ -752,7 +791,9 @@ $("#mBack").onclick=()=>show("home");
 $("#cBack").onclick=()=>show("home");
 $("#dHome").onclick=()=>show("home");
 
-load();
+startLine().then(go=>{ if(go) load(); }).catch(()=>{
+  const n=$("#notice"); n.textContent="LINEでの確認ができませんでした。LINEのトーク画面のメニューから、もう一度開いてください。"; n.hidden=false;
+});
 </script>
 </body>
 </html>
