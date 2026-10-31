@@ -514,7 +514,8 @@ function renderDays(){
     let sum, chips;
     if(k==="相談"){
       const open=d.consult.reduce((n,s)=>n+s.left,0);
-      sum = open===0 ? el("span",{className:"sum full",textContent:"満席"}) : el("span",{className:"sum "+(open<=2?"few":"ok"),textContent:`空き ${open}`});
+      // 日ごとの空きは数を出さず、ことばで見せる（「空き16」だとがら空きに見えるため）
+      sum = open===0 ? el("span",{className:"sum full",textContent:"満席"}) : el("span",{className:"sum "+(open<=3?"few":"ok"),textContent:open<=3?"残りわずか":"空きあり"});
       chips=d.consult.map(s=>{
         const st = s.left>=2 ? "ok" : s.left===1 ? "few" : "";
         const b=el("button",{type:"button",className:"chip "+st,disabled:s.left<1},[el("span",{className:"t",textContent:s.time}), el("span",{className:"s",textContent: s.cap<1 ? "受付なし" : s.left>=2 ? "◎" : s.left===1 ? "△ 残り1" : "× 満席"})]);
@@ -524,7 +525,7 @@ function renderDays(){
       });
     }else{
       const left=d.place.left;
-      sum = left<1 ? el("span",{className:"sum full",textContent:"満席"}) : el("span",{className:"sum "+(left<=2?"few":"ok"),textContent:`残り ${left}名`});
+      sum = left<1 ? el("span",{className:"sum full",textContent:"満席"}) : el("span",{className:"sum "+(left<=2?"few":"ok"),textContent:left<=2?"残りわずか":"空きあり"});
       chips=DATA.times.map(t=>{
         const b=el("button",{type:"button",className:"chip "+(left>0?"ok":""),disabled:left<1},[el("span",{className:"t",textContent:t}), el("span",{className:"s",textContent:left>0?"来館":"× 満席"})]);
         b.setAttribute("aria-label", dateLabel(d.date,d.w)+" "+t+" に来館");
