@@ -163,6 +163,7 @@ button{font:inherit;color:inherit}
 .rsv{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 16px}
 .rsv b{display:block;font-size:16px;font-weight:700}
 .rsv small{color:var(--muted);font-size:12px}
+.rsv .today{max-width:52%;font-size:12px;font-weight:700;color:var(--mark-ink);background:var(--mark-soft);border-radius:10px;padding:6px 10px;line-height:1.5}
 .rsv button{border:1.5px solid var(--danger);background:transparent;color:var(--danger);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 .loading{color:var(--muted);text-align:center;padding:30px 0;font-size:14px}
 .hist{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:6px 16px}
@@ -357,7 +358,7 @@ button{font:inherit;color:inherit}
       <div class="pick" id="dPick"></div>
       <p class="dline" id="dLine" hidden></p>
       <img class="photo" src="photo-done.jpg" alt="Campus Addのテーブルに置かれたWelcomeの飾り" width="800" height="533" loading="lazy">
-      <p>当日は、予約した時間にCampus Addへお越しください。<br>キャンセルは、このページの「予約の確認」からできます。</p>
+      <p>当日は、予約した時間にCampus Addへお越しください。<br>キャンセルは、前日までならこのページの「予約の確認」からできます。<br>利用日当日のキャンセルや来館が遅くなる場合は、LINEでご連絡ください。</p>
       <button class="cta ghost" type="button" id="dHome">続けて別の日も予約する</button>
     </div>
   </main>
@@ -766,7 +767,11 @@ function renderDoneLine(notified){
 function renderMine(){
   const box=$("#mList");
   if(!ME.reservations.length){ box.replaceChildren(el("div",{className:"empty",textContent:"これからの予約はありません。"})); return; }
+  const jst=new Date(Date.now()+9*3600e3);
+  const today=`${jst.getUTCFullYear()}/${String(jst.getUTCMonth()+1).padStart(2,"0")}/${String(jst.getUTCDate()).padStart(2,"0")}`;
   box.replaceChildren(...ME.reservations.map(r=>{
+    // 利用日当日は、ここからはキャンセルできない（LINEで連絡してもらう）
+    if(r.date<=today) return el("div",{className:"rsv"},[el("div",{},[el("b",{textContent:dateLabel(r.date,wOf(r.date))+" "+r.time}), el("small",{textContent:r.kind==="相談"?"キャンアドで相談":"スペース使用"})]), el("span",{className:"today",textContent:"本日の予約です。キャンセルや遅れる場合はLINEでご連絡ください"})]);
     const btn=el("button",{type:"button",textContent:"キャンセル"});
     btn.onclick=async()=>{
       if(!confirm(dateLabel(r.date,wOf(r.date))+" "+r.time+" の予約をキャンセルしますか？")) return;
