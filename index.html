@@ -540,7 +540,7 @@ function renderDays(){
     const card=el("div",{className:"day reveal"},[
       el("div",{className:"dnum"+(d.w==="土"?" sat":""),"aria-hidden":"true"},[el("span",{className:"m",textContent:mm+"月"}),el("span",{className:"d",textContent:dd}),el("span",{className:"w",textContent:d.w+"曜"})]),
       el("div",{className:"dbody"},[
-        el("div",{className:"dh"},[el("p",{className:"staff"},[el("span",{className:"sr",textContent:dateLabel(d.date,d.w)+" "}), d.staff?"担当："+d.staff+(d.note?`（${d.note}）`:""):""]), sum]),
+        el("div",{className:"dh"},[el("p",{className:"staff"},[el("span",{className:"sr",textContent:dateLabel(d.date,d.w)+" "}), k==="相談" && d.staff?"担当："+d.staff+(d.note?`（${d.note}）`:""):""]), sum]), // スペース使用では担当を出さない
         d.closeNote ? el("p",{className:"closenote",textContent:d.closeNote}) : null,
         el("div",{className:"chips"},chips)
       ])
