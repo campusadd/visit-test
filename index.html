@@ -218,6 +218,7 @@ button{font:inherit;color:inherit}
 .dbody .dh{align-items:flex-start}
 .dh .sum{white-space:nowrap;flex:none}
 .dbody .staff{margin:0;font-size:12px;color:var(--muted)}
+.closenote{margin:0;justify-self:start;font-size:12px;font-weight:700;color:var(--mark-ink);background:var(--mark-soft);border-radius:8px;padding:2px 10px}
 /* スクロールで、ふわっと出す */
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .5s ease, transform .5s ease}
 .reveal.in{opacity:1;transform:none}
@@ -465,8 +466,8 @@ function demoApi(){
     const d=new Date(start.getTime()+i*864e5), w=d.getUTCDay();
     if(w===0||w===6||rnd()<.12) continue; // 土日と、ときどき休館
     if(i===1 && jst.getUTCHours()>=15) continue; // 前日15時の締切を過ぎた明日
-    const cap=2, staff=rnd()<.3?"亀田・非常勤アドバイザー":"赤坂・亀田", away=days.length===1; // 2日目は「亀田 15:00-16:00 不在」の例
-    days.push({date:ymd(d), w:WD[w], staff, note:away?"亀田は15:00〜16:00不在":"", consult:times.map(t=>{ const out=away&&(t==="15:00"||t==="15:30"); const c=out?1:cap; const used=Math.min(c, rnd()<.35?Math.floor(rnd()*3):0); return {time:t,cap:c,left:c-used,staff:out?staff.replace(/・?亀田・?/,""):staff}; }), place:{cap:4,left:Math.floor(rnd()*5)}});
+    const cap=2, staff=rnd()<.3?"亀田・非常勤アドバイザー":"赤坂・亀田", away=days.length===1, early=days.length===2; // 2日目は「亀田 15:00-16:00 不在」、3日目は「16:30閉館」の例
+    days.push({date:ymd(d), w:WD[w], staff, note:away?"亀田は15:00〜16:00不在":"", consult:times.map(t=>{ const out=away&&(t==="15:00"||t==="15:30"); const c=out?1:cap; const used=Math.min(c, rnd()<.35?Math.floor(rnd()*3):0); if(early && t==="16:30") return {time:t,cap:0,left:0,staff}; return {time:t,cap:c,left:c-used,staff:out?staff.replace(/・?亀田・?/,""):staff}; }), place:{cap:4,left:Math.floor(rnd()*5)}, close:early?"16:30":"", closeNote:early?"この日は16:30閉館です":""});
   }
   const ok=x=>new Promise(r=>setTimeout(()=>r(x),250));
   return {
@@ -488,6 +489,7 @@ function demoApi(){
 // ---- 状態 ----
 let DATA=null, ME={registered:false,name:"",reservations:[]}, PICK=null, sending=false;
 const kind = () => (document.querySelector('input[name="kind"]:checked')||{}).value || "相談";
+const toMin=t=>{ const [h,m]=String(t).split(":").map(Number); return h*60+m; };
 function dateLabel(date, w){ const [,m,d]=date.split("/").map(Number); return `${m}月${d}日（${w}）`; }
 function wOf(date){ const [y,m,d]=date.split("/").map(Number); return WD[new Date(Date.UTC(y,m-1,d)).getUTCDay()]; }
 
@@ -527,7 +529,7 @@ function renderDays(){
     }else{
       const left=d.place.left;
       sum = left<1 ? el("span",{className:"sum full",textContent:"満席"}) : el("span",{className:"sum "+(left<=2?"few":"ok"),textContent:left<=2?"残りわずか":"空きあり"});
-      chips=DATA.times.map(t=>{
+      chips=DATA.times.filter(t=>!d.close || toMin(t)<toMin(d.close)).map(t=>{
         const b=el("button",{type:"button",className:"chip "+(left>0?"ok":""),disabled:left<1},[el("span",{className:"t",textContent:t}), el("span",{className:"s",textContent:left>0?"来館":"× 満席"})]);
         b.setAttribute("aria-label", dateLabel(d.date,d.w)+" "+t+" に来館");
         if(left>0) b.onclick=()=>pick(d, t);
@@ -539,6 +541,7 @@ function renderDays(){
       el("div",{className:"dnum"+(d.w==="土"?" sat":""),"aria-hidden":"true"},[el("span",{className:"m",textContent:mm+"月"}),el("span",{className:"d",textContent:dd}),el("span",{className:"w",textContent:d.w+"曜"})]),
       el("div",{className:"dbody"},[
         el("div",{className:"dh"},[el("p",{className:"staff"},[el("span",{className:"sr",textContent:dateLabel(d.date,d.w)+" "}), d.staff?"担当："+d.staff+(d.note?`（${d.note}）`:""):""]), sum]),
+        d.closeNote ? el("p",{className:"closenote",textContent:d.closeNote}) : null,
         el("div",{className:"chips"},chips)
       ])
     ]);
@@ -640,7 +643,7 @@ function load(){
 
 // ---- 2. 確認・入力 ----
 function pickText(p){
-  return [el("span",{className:"k",textContent:p.kind==="相談"?"キャンアドで相談":"スペース使用"}), el("span",{className:"d",textContent:dateLabel(p.date,p.w)+" "+p.time}), el("span",{className:"x",textContent:p.kind==="相談"?"相談時間の目安は30分間です。相談のあとも、閉館（17:00）まで滞在して作業を続けられます。アドバイザーの手が空いていれば続けて相談できることもあるので、気軽に声をかけてください。":"来館する時間です。閉館（17:00）まで滞在できます"}), p.kind==="相談" && p.staff ? el("span",{className:"x",textContent:"この時間の担当："+p.staff}) : null].filter(Boolean);
+  return [el("span",{className:"k",textContent:p.kind==="相談"?"キャンアドで相談":"スペース使用"}), el("span",{className:"d",textContent:dateLabel(p.date,p.w)+" "+p.time}), el("span",{className:"x",textContent:p.kind==="相談"?"相談時間の目安は30分間です。相談のあとも、閉館（"+(p.close||"17:00")+"）まで滞在して作業を続けられます。アドバイザーの手が空いていれば続けて相談できることもあるので、気軽に声をかけてください。":"来館する時間です。閉館（"+(p.close||"17:00")+"）まで滞在できます"}), p.closeNote ? el("span",{className:"x closenote",textContent:p.closeNote}) : null, p.kind==="相談" && p.staff ? el("span",{className:"x",textContent:"この時間の担当："+p.staff}) : null].filter(Boolean);
 }
 function field(id,label,{type="text",ph="",help="",mode=""}={}){
   const inp=el("input",{type,id,placeholder:ph,maxLength:60}); if(mode) inp.inputMode=mode;
@@ -702,7 +705,7 @@ function readTopics(){
 }
 function pick(d,time){
   const slot=(d.consult||[]).find(s=>s.time===time);
-  PICK={date:d.date, w:d.w, time, kind:kind(), staff: slot && slot.staff ? slot.staff : (d.staff||""), wanted: slot && slot.wanted ? slot.wanted : []};
+  PICK={date:d.date, w:d.w, time, kind:kind(), staff: slot && slot.staff ? slot.staff : (d.staff||""), wanted: slot && slot.wanted ? slot.wanted : [], close:d.close||"", closeNote:d.closeNote||""};
   $("#cPick").replaceChildren(...pickText(PICK));
   renderTopics();
   renderProfile();
