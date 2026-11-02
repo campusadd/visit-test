@@ -467,7 +467,7 @@ function demoApi(){
     if(w===0||w===6||rnd()<.12) continue; // 土日と、ときどき休館
     if(i===1 && jst.getUTCHours()>=15) continue; // 前日15時の締切を過ぎた明日
     const cap=2, staff=rnd()<.3?"亀田・非常勤アドバイザー":"赤坂・亀田", away=days.length===1, early=days.length===2; // 2日目は「亀田 15:00-16:00 不在」、3日目は「16:30閉館」の例
-    days.push({date:ymd(d), w:WD[w], staff, note:away?"亀田は15:00〜16:00不在":"", consult:times.map(t=>{ const out=away&&(t==="15:00"||t==="15:30"); const c=out?1:cap; const used=Math.min(c, rnd()<.35?Math.floor(rnd()*3):0); if(early && t==="16:30") return {time:t,cap:0,left:0,staff}; return {time:t,cap:c,left:c-used,staff:out?staff.replace(/・?亀田・?/,""):staff}; }), place:{cap:4,left:Math.floor(rnd()*5)}, close:early?"16:30":"", closeNote:early?"この日は16:30閉館です":""});
+    days.push({date:ymd(d), w:WD[w], staff, note:away?"亀田は15:00〜16:00不在":"", consult:times.map(t=>{ const out=away&&(t==="15:00"||t==="15:30"); const c=out?1:cap; const used=Math.min(c, rnd()<.35?Math.floor(rnd()*3):0); if(early && t==="16:30") return {time:t,cap:0,left:0,staff}; return {time:t,cap:c,left:c-used,staff:out?staff.replace(/・?亀田・?/,""):staff}; }), place:{cap:4,left:Math.floor(rnd()*5)}, close:early?"16:30":"", closeNote:early?"この日は16:30閉館です":"", placeLast:early?"15:30":"16:00"});
   }
   const ok=x=>new Promise(r=>setTimeout(()=>r(x),250));
   return {
@@ -504,7 +504,7 @@ function renderLegend(){
   $("#step2").textContent = k==="相談" ? "空いている時間を選ぶ" : "来館する日と時間を選ぶ";
   $("#legend").replaceChildren(...(k==="相談"
     ? [el("span",{},[el("i",{textContent:"◎",style:"color:var(--ok)"}),"空きあり"]), el("span",{},[el("i",{textContent:"△",style:"color:var(--few)"}),"残り1"]), el("span",{},[el("i",{textContent:"×"}),"満席・受付なし"])]
-    : [el("span",{textContent:"施設利用は1日あたりの人数で受け付けています。来館する時間を選んでください。"})]));
+    : [el("span",{textContent:"スペース使用は1日あたりの人数で受け付けています。来館する時間を選んでください（最終入場は閉館の1時間前です）。"})]));
 }
 function renderDays(){
   renderLegend();
@@ -529,7 +529,7 @@ function renderDays(){
     }else{
       const left=d.place.left;
       sum = left<1 ? el("span",{className:"sum full",textContent:"満席"}) : el("span",{className:"sum "+(left<=2?"few":"ok"),textContent:left<=2?"残りわずか":"空きあり"});
-      chips=DATA.times.filter(t=>!d.close || toMin(t)<toMin(d.close)).map(t=>{
+      chips=DATA.times.filter(t=>toMin(t)<=toMin(d.placeLast||"16:00")).map(t=>{ // 最終入場（ふだんは16:00）まで
         const b=el("button",{type:"button",className:"chip "+(left>0?"ok":""),disabled:left<1},[el("span",{className:"t",textContent:t}), el("span",{className:"s",textContent:left>0?"来館":"× 満席"})]);
         b.setAttribute("aria-label", dateLabel(d.date,d.w)+" "+t+" に来館");
         if(left>0) b.onclick=()=>pick(d, t);
