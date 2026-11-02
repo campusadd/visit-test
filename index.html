@@ -114,6 +114,7 @@ button{font:inherit;color:inherit}
 .chip:hover:not([disabled]){border-color:var(--accent)}
 .chip[disabled]{cursor:default;background:transparent;border-style:dashed}
 .chip[disabled] .t,.chip[disabled] .s{color:var(--muted)}
+.limitnote{background:var(--mark-soft);color:var(--mark-ink);border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;line-height:1.6}
 .empty{background:var(--surface);border:1px dashed var(--line);border-radius:16px;padding:18px 16px;color:var(--muted);font-size:14px;text-align:center}
 .notice{background:var(--danger-soft);color:var(--danger);border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;margin-top:14px}
 
@@ -335,13 +336,16 @@ button{font:inherit;color:inherit}
       <div id="profile"></div>
       <div class="q"><label class="ql" for="memo">連絡事項<span class="opt">任意</span></label><p class="qh">遅れて来る可能性など、スタッフに伝えておきたいことがあれば書いてください。</p><textarea id="memo" maxlength="500"></textarea></div>
       <div class="q" id="f-agree">
-        <ul class="rules">
-          <li>予約は「来館する時間」の予約です。相談時間の目安は30分間です。相談のあとも、閉館（17:00）まで滞在して作業を続けられます。アドバイザーの手が空いていれば続けて相談できることもあるので、気軽に声をかけてください。</li>
-          <li>相談のあとは、振り返りシートへの入力をお願いしています（スマホで1分ほど）。スペース使用の場合は不要です。</li>
+        <!-- data-k のある行は、選んだ使い方（相談／場所利用）のときだけ出す -->
+        <ul class="rules" id="rules">
+          <li data-k="相談">予約は「来館する時間」の予約です。相談時間の目安は30分間です。相談のあとも、閉館（<span class="cl">17:00</span>）まで滞在して作業を続けられます。アドバイザーの手が空いていれば続けて相談できることもあるので、気軽に声をかけてください。</li>
+          <li data-k="場所利用">予約は「来館する時間」の予約です。閉館（<span class="cl">17:00</span>）まで滞在できます。</li>
+          <li data-k="相談">相談のあとは、振り返りシートへの入力をお願いしています（スマホで1分ほど）。</li>
           <li>友達と一緒に来たい場合や、遅れる可能性がある場合は、事前にCampus Addの公式LINEでご相談ください。</li>
-          <li>相談の内容や来館人数によって、お待ちいただく場合があります。</li>
+          <li data-k="相談">相談の内容や来館人数によって、お待ちいただく場合があります。</li>
+          <li data-k="場所利用">来館人数によって、お待ちいただく場合があります。</li>
           <li>当サービスは、民間企業への就職を希望する方のサポートが中心です。</li>
-          <li>キャンセルはこのページの「予約の確認」からできます。当日のキャンセルや遅れる場合は、LINEでご連絡ください。</li>
+          <li>キャンセルは、前日までならこのページの「予約の確認」からできます。利用日当日のキャンセルや来館が遅くなる場合は、LINEでご連絡ください。</li>
         </ul>
         <label class="agree"><input type="checkbox" id="agree">上記を確認しました</label>
         <p class="qe" hidden></p>
@@ -513,7 +517,10 @@ function renderDays(){
   const k=kind();
   const list=DATA.days.filter(d => k==="相談" ? d.consult.some(s=>s.cap>0) : d.place.cap>0);
   if(!list.length){ box.replaceChildren(el("div",{className:"empty",textContent:"いま予約できる日はありません。次の日程が決まるまでお待ちください。"})); return; }
-  box.replaceChildren(...list.map(d=>{
+  // 相談は、これからの予約を同時に consultLimit 件まで。上限のときは先に知らせて、時間を選べないようにする
+  const limit=DATA.consultLimit||0, mine=(ME.reservations||[]).filter(r=>r.kind==="相談").length;
+  const blocked = k==="相談" && limit>0 && mine>=limit;
+  box.replaceChildren(blocked ? el("div",{className:"limitnote",textContent:`相談の予約は、同時に${limit}件までです。いま${mine}件入っています。1件終わるか、キャンセルすると次の予約ができます。`}) : "", ...list.map(d=>{
     let sum, chips;
     if(k==="相談"){
       const open=d.consult.reduce((n,s)=>n+s.left,0);
@@ -521,9 +528,9 @@ function renderDays(){
       sum = open===0 ? el("span",{className:"sum full",textContent:"満席"}) : el("span",{className:"sum "+(open<=3?"few":"ok"),textContent:open<=3?"残りわずか":"空きあり"});
       chips=d.consult.map(s=>{
         const st = s.left>=2 ? "ok" : s.left===1 ? "few" : "";
-        const b=el("button",{type:"button",className:"chip "+st,disabled:s.left<1},[el("span",{className:"t",textContent:s.time}), el("span",{className:"s",textContent: s.cap<1 ? "受付なし" : s.left>=2 ? "◎" : s.left===1 ? "△ 残り1" : "× 満席"})]);
+        const b=el("button",{type:"button",className:"chip "+st,disabled:s.left<1||blocked},[el("span",{className:"t",textContent:s.time}), el("span",{className:"s",textContent: s.cap<1 ? "受付なし" : s.left>=2 ? "◎" : s.left===1 ? "△ 残り1" : "× 満席"})]);
         b.setAttribute("aria-label", dateLabel(d.date,d.w)+" "+s.time+" "+(s.left>0?"空き"+s.left:"満席"));
-        if(s.left>0) b.onclick=()=>pick(d, s.time);
+        if(s.left>0 && !blocked) b.onclick=()=>pick(d, s.time);
         return b;
       });
     }else{
@@ -707,6 +714,8 @@ function pick(d,time){
   const slot=(d.consult||[]).find(s=>s.time===time);
   PICK={date:d.date, w:d.w, time, kind:kind(), staff: slot && slot.staff ? slot.staff : (d.staff||""), wanted: slot && slot.wanted ? slot.wanted : [], close:d.close||"", closeNote:d.closeNote||""};
   $("#cPick").replaceChildren(...pickText(PICK));
+  document.querySelectorAll("#rules li[data-k]").forEach(li=>{ li.hidden = li.dataset.k!==PICK.kind; });
+  document.querySelectorAll("#rules .cl").forEach(x=>{ x.textContent = PICK.close||"17:00"; });
   renderTopics();
   renderProfile();
   $("#cErr").hidden=true; $("#agree").checked=false; $("#memo").value="";
