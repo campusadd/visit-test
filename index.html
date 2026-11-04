@@ -219,6 +219,10 @@ button{font:inherit;color:inherit}
 .dbody .dh{align-items:flex-start}
 .dh .sum{white-space:nowrap;flex:none}
 .dbody .staff{margin:0;font-size:12px;color:var(--muted)}
+.sum.ask{background:var(--soft);color:var(--muted)}
+.asknote{margin:0;font-size:12px;color:var(--muted);line-height:1.6}
+.chip.askchip{cursor:default;opacity:.75}
+.askbtn{justify-self:start;display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--accent);color:var(--accent);background:transparent;border-radius:999px;padding:6px 16px;font-size:13px;font-weight:700;text-decoration:none}
 .closenote{margin:0;justify-self:start;font-size:12px;font-weight:700;color:var(--mark-ink);background:var(--mark-soft);border-radius:8px;padding:2px 10px}
 /* スクロールで、ふわっと出す */
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .5s ease, transform .5s ease}
@@ -470,9 +474,9 @@ function demoApi(){
   for(let i=1;i<=28;i++){
     const d=new Date(start.getTime()+i*864e5), w=d.getUTCDay();
     if(w===0||w===6||rnd()<.12) continue; // 土日と、ときどき休館
-    if(i===1 && jst.getUTCHours()>=15) continue; // 前日15時の締切を過ぎた明日
+    const askDay = i===1 && jst.getUTCHours()>=15; // 前日15時の締切を過ぎた明日は「WEB受付は終了」
     const cap=2, staff=rnd()<.3?"亀田・非常勤アドバイザー":"赤坂・亀田", away=days.length===1, early=days.length===2; // 2日目は「亀田 15:00-16:00 不在」、3日目は「16:30閉館」の例
-    days.push({date:ymd(d), w:WD[w], staff, note:away?"亀田は15:00〜16:00不在":"", consult:times.map(t=>{ const out=away&&(t==="15:00"||t==="15:30"); const c=out?1:cap; const used=Math.min(c, rnd()<.35?Math.floor(rnd()*3):0); if(early && t==="16:30") return {time:t,cap:0,left:0,staff}; return {time:t,cap:c,left:c-used,staff:out?staff.replace(/・?亀田・?/,""):staff}; }), place:{cap:4,left:Math.floor(rnd()*5)}, close:early?"16:30":"", closeNote:early?"この日は16:30閉館です":"", placeLast:early?"15:30":"16:00"});
+    days.push({date:ymd(d), w:WD[w], staff, note:away?"亀田は15:00〜16:00不在":"", consult:times.map(t=>{ const out=away&&(t==="15:00"||t==="15:30"); const c=out?1:cap; const used=Math.min(c, rnd()<.35?Math.floor(rnd()*3):0); if(early && t==="16:30") return {time:t,cap:0,left:0,staff}; return {time:t,cap:c,left:c-used,staff:out?staff.replace(/・?亀田・?/,""):staff}; }), place:{cap:4,left:Math.floor(rnd()*5)}, close:early?"16:30":"", closeNote:early?"この日は16:30閉館です":"", placeLast:early?"15:30":"16:00", ask:askDay, nowMin:-1});
   }
   const ok=x=>new Promise(r=>setTimeout(()=>r(x),250));
   return {
@@ -523,24 +527,28 @@ function renderDays(){
   const blocked = k==="相談" && limit>0 && mine>=limit;
   box.replaceChildren(blocked ? el("div",{className:"limitnote",textContent:`相談の予約は、同時に${limit}件までです。いま${mine}件入っています。1件終わるか、キャンセルすると次の予約ができます。`}) : "", ...list.map(d=>{
     let sum, chips;
+    // 締切を過ぎた日（明日・今日）：空きの様子だけ見せて、時間は押せない。LINEでの問い合わせにつなぐ
+    const ask=!!d.ask, later=t=>!ask || d.nowMin<0 || toMin(t)>d.nowMin;
     if(k==="相談"){
       const open=d.consult.reduce((n,s)=>n+s.left,0);
       // 日ごとの空きは数を出さず、ことばで見せる（「空き16」だとがら空きに見えるため）
       sum = open===0 ? el("span",{className:"sum full",textContent:"満席"}) : el("span",{className:"sum "+(open<=3?"few":"ok"),textContent:open<=3?"残りわずか":"空きあり"});
-      chips=d.consult.map(s=>{
+      if(ask) sum=el("span",{className:"sum ask",textContent:"WEB受付は終了"});
+      chips=d.consult.filter(s=>later(s.time)).map(s=>{
         const st = s.left>=2 ? "ok" : s.left===1 ? "few" : "";
-        const b=el("button",{type:"button",className:"chip "+st,disabled:s.left<1||blocked},[el("span",{className:"t",textContent:s.time}), el("span",{className:"s",textContent: s.cap<1 ? "受付なし" : s.left>=2 ? "◎" : s.left===1 ? "△ 残り1" : "× 満席"})]);
+        const b=el("button",{type:"button",className:"chip "+st+(ask?" askchip":""),disabled:s.left<1||blocked||ask},[el("span",{className:"t",textContent:s.time}), el("span",{className:"s",textContent: s.cap<1 ? "受付なし" : s.left>=2 ? "◎" : s.left===1 ? "△ 残り1" : "× 満席"})]);
         b.setAttribute("aria-label", dateLabel(d.date,d.w)+" "+s.time+" "+(s.left>0?"空き"+s.left:"満席"));
-        if(s.left>0 && !blocked) b.onclick=()=>pick(d, s.time);
+        if(s.left>0 && !blocked && !ask) b.onclick=()=>pick(d, s.time);
         return b;
       });
     }else{
       const left=d.place.left;
       sum = left<1 ? el("span",{className:"sum full",textContent:"満席"}) : el("span",{className:"sum "+(left<=2?"few":"ok"),textContent:left<=2?"残りわずか":"空きあり"});
-      chips=DATA.times.filter(t=>toMin(t)<=toMin(d.placeLast||"16:00")).map(t=>{ // 最終入場（ふだんは16:00）まで
-        const b=el("button",{type:"button",className:"chip "+(left>0?"ok":""),disabled:left<1},[el("span",{className:"t",textContent:t}), el("span",{className:"s",textContent:left>0?"来館":"× 満席"})]);
+      if(ask) sum=el("span",{className:"sum ask",textContent:"WEB受付は終了"});
+      chips=DATA.times.filter(t=>toMin(t)<=toMin(d.placeLast||"16:00") && later(t)).map(t=>{ // 最終入場（ふだんは16:00）まで
+        const b=el("button",{type:"button",className:"chip "+(left>0?"ok":"")+(ask?" askchip":""),disabled:left<1||ask},[el("span",{className:"t",textContent:t}), el("span",{className:"s",textContent:left>0?(ask?"空きあり":"来館"):"× 満席"})]);
         b.setAttribute("aria-label", dateLabel(d.date,d.w)+" "+t+" に来館");
-        if(left>0) b.onclick=()=>pick(d, t);
+        if(left>0 && !ask) b.onclick=()=>pick(d, t);
         return b;
       });
     }
@@ -550,7 +558,9 @@ function renderDays(){
       el("div",{className:"dbody"},[
         el("div",{className:"dh"},[el("p",{className:"staff"},[el("span",{className:"sr",textContent:dateLabel(d.date,d.w)+" "}), k==="相談" && d.staff?"担当："+d.staff+(d.note?`（${d.note}）`:""):""]), sum]), // スペース使用では担当を出さない
         d.closeNote ? el("p",{className:"closenote",textContent:d.closeNote}) : null,
-        el("div",{className:"chips"},chips)
+        ask ? el("p",{className:"asknote",textContent:"空きがあれば来館できることがあります。LINEでお問い合わせください。"}) : null,
+        el("div",{className:"chips"},chips),
+        ask ? el("a",{className:"askbtn",href:"https://line.me/R/oaMessage/@campusadd/?"+encodeURIComponent(`${mm}/${dd}（${d.w}）の来館について問い合わせです。`),textContent:"LINEで問い合わせる"}) : null
       ])
     ]);
     return card;
