@@ -688,11 +688,14 @@ function renderProfile(){
   );
 }
 // 相談の予約だけ：最も解決したいこと・2番目に解決したいこと（それぞれ具体的な内容は任意）
-function topicField(no,label){
+function topicField(no,label,optional){
   const name="topic"+no;
+  // 任意の欄は、選んだ項目をもう一度押すと選択を外せる
+  const radio=(t,i)=>{ const r=el("input",{type:"radio",name,value:t,id:name+"-"+i}); if(optional){ r.addEventListener("pointerdown",()=>{ r.dataset.was=r.checked?"1":""; }); r.addEventListener("click",()=>{ if(r.dataset.was==="1"){ r.checked=false; r.dataset.was=""; } }); } return r; };
   return el("div",{className:"q",id:"f-"+name},[
-    el("span",{className:"ql"},[label,el("span",{className:"req",textContent:"必須"})]),
-    el("div",{className:"grads"},TOPICS.map((t,i)=>el("label",{},[el("input",{type:"radio",name,value:t,id:name+"-"+i}),el("span",{textContent:t})]))),
+    el("span",{className:"ql"},[label,el("span",{className:optional?"opt":"req",textContent:optional?"任意":"必須"})]),
+    optional ? el("p",{className:"qh",textContent:"ほかにも相談したいことがあれば選んでください（選んだ項目をもう一度押すと外せます）"}) : null,
+    el("div",{className:"grads"},TOPICS.map((t,i)=>el("label",{},[radio(t,i),el("span",{textContent:t})]))),
     el("label",{className:"qh",htmlFor:"detail"+no,textContent:"具体的に相談したいこと（任意）",style:"margin:2px 0 0"}),
     el("textarea",{id:"detail"+no,maxLength:300,placeholder:no===1?"例）ガクチカがうまくまとまらない":"例）面接で緊張してしまう",style:"min-height:64px"}),
     el("p",{className:"qe",hidden:true})
@@ -707,7 +710,7 @@ function renderTopics(){
   // 同じ時間に、同じ担当への希望が先に入っているとき（先着順）
   const takenNote = !absentNote && ME.lastStaff && (PICK.wanted||[]).includes(ME.lastStaff) ? el("p",{className:"qh",style:"margin:0",textContent:`この時間は、${ME.lastStaff}への担当希望がすでに入っています。${ME.lastStaff}の担当を希望する場合は、別の時間を選んでください。`}) : null;
   const same = absentNote || takenNote || (ME.lastStaff ? el("div",{className:"q"},[el("label",{className:"same"},[el("input",{type:"checkbox",id:"sameStaff"}), el("span",{},[`前回の担当（${ME.lastStaff}）を希望する`, el("br"), el("small",{className:"qh",style:"margin:0",textContent:"任意です。できるだけ調整しますが、ご希望に沿えない場合もあります。"})])])]) : null);
-  box.replaceChildren(el("p",{className:"sec",textContent:"相談したいことを教えてください"}), topicField(1,"相談で最も解決したいこと"), topicField(2,"2番目に解決したいこと"));
+  box.replaceChildren(el("p",{className:"sec",textContent:"相談したいことを教えてください"}), topicField(1,"相談で最も解決したいこと"), topicField(2,"2番目に解決したいこと",true));
   // 担当の希望は、日時の枠（この時間の担当）のすぐ下に出す
   $("#sameBox").replaceChildren(...[same].filter(Boolean));
   box.style.display="grid"; box.style.gap="12px";
@@ -717,9 +720,9 @@ function readTopics(){
   const g=n=>{ const x=document.querySelector(`input[name="topic${n}"]:checked`); return x?x.value:""; };
   const t1=g(1), t2=g(2);
   setBad("f-topic1", t1?"":"選んでください。");
-  setBad("f-topic2", !t2?"選んでください。":t2===t1?"1番目と違う項目を選んでください。":"");
+  setBad("f-topic2", t2 && t2===t1?"1番目と違う項目を選んでください。":"");
   const ss=$("#sameStaff");
-  return {ok:!!t1 && !!t2 && t1!==t2, v:{topic1:t1, detail1:val("detail1"), topic2:t2, detail2:val("detail2"), sameStaff:!!(ss && ss.checked)}};
+  return {ok:!!t1 && (!t2 || t2!==t1), v:{topic1:t1, detail1:val("detail1"), topic2:t2, detail2:t2?val("detail2"):"", sameStaff:!!(ss && ss.checked)}};
 }
 function pick(d,time){
   const slot=(d.consult||[]).find(s=>s.time===time);
