@@ -644,20 +644,38 @@ function renderMe(){
   $("#mineN").hidden=!n; $("#mineN").textContent=n;
 }
 
+// 空き状況（みんな同じ）と、本人の情報（名前・予約・振り返り）は別々に読み、届いた方から出す。
+// 空き状況はLINEの本人確認を待たずに、ページを開いたらすぐ聞きに行く（2026-11-11〜）
+let ME_READY=false, LINE_NG=false, meDone; const ME_FIRST=new Promise(r=>meDone=r);
+function setTestbar(){
+  if(!DATA) return;
+  const tb=$("#testbar");
+  if(DATA.demo){ tb.textContent="お試しモード：仮のデータで動いています。予約しても実際には登録されません。"; tb.hidden=false; }
+  else if(DATA.test){ tb.textContent=ID_TOKEN?"テスト版：LINEのアカウントで本人を確認しています（スタッフの試し用）":"テスト版：この端末を1人の利用者として扱っています"; tb.hidden=false; }
+}
+function showSlots(s){
+  if(!s || !s.ok) throw new Error(s && s.error);
+  DATA=s;
+  $("#dl").textContent=s.deadline||"15:00";
+  setTestbar();
+  if(!LINE_NG) $("#notice").hidden=true; // LINEの確認に失敗したお知らせは消さない
+  renderDays(); reveal();
+}
+function slotsFail(){
+  const n=$("#notice"); n.textContent="空き状況を読み込めませんでした。電波の良いところで、ページを開き直してください。"; n.hidden=false;
+  $("#days").replaceChildren();
+}
+function loadMe(){
+  return (ID_TOKEN ? API.post({action:"me",...who()}) : API.get({action:"me",...who()})).then(m=>{
+    if(!m || !m.ok) return;
+    ME=m; ME_READY=true;
+    renderMe(); renderRefAsk(); setTestbar();
+    // 相談の回数に上限があり、すでに相談の予約がある人だけ、押せる枠が変わるので出し直す
+    if(DATA && DATA.consultLimit && (ME.reservations||[]).some(r=>r.kind==="相談")){ renderDays(); reveal(); }
+  }).catch(()=>{}).finally(()=>{ ME_READY=true; meDone(); });
+}
 function load(){
-  return Promise.all([API.get({action:"slots"}), (ID_TOKEN ? API.post({action:"me",...who()}) : API.get({action:"me",...who()}))]).then(([s,m])=>{
-    if(!s.ok) throw new Error(s.error);
-    DATA=s; if(m && m.ok) ME=m;
-    $("#dl").textContent=s.deadline||"15:00";
-    const tb=$("#testbar");
-    if(s.demo){ tb.textContent="お試しモード：仮のデータで動いています。予約しても実際には登録されません。"; tb.hidden=false; }
-    else if(s.test){ tb.textContent=ID_TOKEN?"テスト版：LINEのアカウントで本人を確認しています（スタッフの試し用）":"テスト版：この端末を1人の利用者として扱っています"; tb.hidden=false; }
-    $("#notice").hidden=true;
-    renderMe(); renderRefAsk(); renderDays(); reveal();
-  }).catch(err=>{
-    const n=$("#notice"); n.textContent="空き状況を読み込めませんでした。電波の良いところで、ページを開き直してください。"; n.hidden=false;
-    $("#days").replaceChildren();
-  });
+  return Promise.all([API.get({action:"slots"}).then(showSlots).catch(slotsFail), loadMe()]);
 }
 
 // ---- 2. 確認・入力 ----
@@ -725,7 +743,9 @@ function readTopics(){
   const ss=$("#sameStaff");
   return {ok:!!t1 && (!t2 || t2!==t1), v:{topic1:t1, detail1:val("detail1"), topic2:t2, detail2:t2?val("detail2"):"", sameStaff:!!(ss && ss.checked)}};
 }
-function pick(d,time){
+async function pick(d,time){
+  // 本人の情報がまだ届いていないときは、少しだけ待つ（登録済みの人に、名前などの入力欄を出さないため）
+  if(!ME_READY) await Promise.race([ME_FIRST, new Promise(r=>setTimeout(r,8000))]);
   const slot=(d.consult||[]).find(s=>s.time===time);
   PICK={date:d.date, w:d.w, time, kind:kind(), staff: slot && slot.staff ? slot.staff : (d.staff||""), wanted: slot && slot.wanted ? slot.wanted : [], close:d.close||"", closeNote:d.closeNote||""};
   $("#cPick").replaceChildren(...pickText(PICK));
@@ -829,7 +849,9 @@ $("#mBack").onclick=()=>show("home");
 $("#cBack").onclick=()=>show("home");
 $("#dHome").onclick=()=>show("home");
 
-startLine().then(go=>{ if(go) load(); }).catch(()=>{
+const FIRST_SLOTS = API.get({action:"slots"}).then(showSlots).catch(slotsFail);
+startLine().then(go=>{ if(go) loadMe(); }).catch(()=>{
+  LINE_NG=true;
   const n=$("#notice"); n.textContent="LINEでの確認ができませんでした。LINEのトーク画面のメニューから、もう一度開いてください。"; n.hidden=false;
 });
 </script>
