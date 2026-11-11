@@ -215,6 +215,8 @@ button{font:inherit;color:inherit}
 .dnum .d{font-family:var(--f-num);font-weight:300;font-size:34px;line-height:1.05;color:var(--ink)}
 .dnum .w{font-size:11px;font-weight:700;color:var(--muted)}
 .dnum.sat .w{color:var(--blue)}
+.dnum .cl{display:grid;justify-items:center;margin-top:6px;font-size:10px;font-weight:700;line-height:1.3;color:var(--mark-ink);background:var(--mark-soft);border-radius:6px;padding:2px 4px}
+.dnum .cl b{font-family:var(--f-num);font-size:11px}
 .dbody{display:grid;gap:8px;min-width:0}
 .dbody .dh{align-items:flex-start}
 .dh .sum{white-space:nowrap;flex:none}
@@ -554,10 +556,9 @@ function renderDays(){
     }
     const [,mm,dd]=d.date.split("/").map(Number);
     const card=el("div",{className:"day reveal"},[
-      el("div",{className:"dnum"+(d.w==="土"?" sat":""),"aria-hidden":"true"},[el("span",{className:"m",textContent:mm+"月"}),el("span",{className:"d",textContent:dd}),el("span",{className:"w",textContent:d.w+"曜"})]),
+      el("div",{className:"dnum"+(d.w==="土"?" sat":""),"aria-hidden":"true"},[el("span",{className:"m",textContent:mm+"月"}),el("span",{className:"d",textContent:dd}),el("span",{className:"w",textContent:d.w+"曜"}), d.close ? el("span",{className:"cl"},[el("b",{textContent:d.close}),"閉館"]) : null].filter(Boolean)),
       el("div",{className:"dbody"},[
         el("div",{className:"dh"},[el("p",{className:"staff"},[el("span",{className:"sr",textContent:dateLabel(d.date,d.w)+" "}), k==="相談" && d.staff?"担当："+d.staff+(d.note?`（${d.note}）`:""):""]), sum]), // スペース使用では担当を出さない
-        d.closeNote ? el("p",{className:"closenote",textContent:d.closeNote}) : null,
         ask ? el("p",{className:"asknote",textContent:"空きがあれば来館できることがあります。LINEでお問い合わせください。"}) : null,
         el("div",{className:"chips"},chips),
         ask ? el("a",{className:"askbtn",href:"https://line.me/R/oaMessage/@campusadd/?"+encodeURIComponent(`${mm}/${dd}（${d.w}）の来館について問い合わせです。`),textContent:"LINEで問い合わせる"}) : null
