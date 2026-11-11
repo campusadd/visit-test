@@ -462,6 +462,9 @@ function relogin(){
 // ?demo=1：初めての学生として、?demo=2：2回目以降の学生（前回の担当・振り返り・来館の記録あり）として開く
 const DEMO = /[?&]demo=[12](?!\d)/.test(location.search);
 const DEMO_RETURNING = /[?&]demo=2(?!\d)/.test(location.search);
+// 受付のQRコード（?walkin=1）から開いたときだけ、今日の枠も予約できる（当日来館の学生用。ふだんの画面には何も出ない）
+// LINEから開くと最初は ?liff.state=... の形で届くので、ほどいてから見る
+const WALKIN = (()=>{ try{ return /[?&]walkin=1(?!\d)/.test(decodeURIComponent(location.search)); }catch(e){ return false; } })();
 const API = CONFIG.apiUrl && !DEMO ? {
   get: q => fetch(CONFIG.apiUrl+"?"+new URLSearchParams(q),{cache:"no-store"}).then(r=>r.json()),
   post: b => fetch(CONFIG.apiUrl,{method:"POST",body:JSON.stringify(b)}).then(r=>r.json()).then(r=>{ if(r && r.relogin && relogin()) return new Promise(()=>{}); return r; })
@@ -473,12 +476,12 @@ function demoApi(){
   const jst=new Date(Date.now()+9*3600e3), start=new Date(Date.UTC(jst.getUTCFullYear(),jst.getUTCMonth(),jst.getUTCDate()));
   const days=[], rsv=[]; let user=DEMO_RETURNING?{name:"テスト 花子"}:null, seed=7, reflected=false;
   const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
-  for(let i=1;i<=28;i++){
+  for(let i=WALKIN?0:1;i<=28;i++){ // 当日受付のお試しでは、今日も出す
     const d=new Date(start.getTime()+i*864e5), w=d.getUTCDay();
-    if(w===0||w===6||rnd()<.12) continue; // 土日と、ときどき休館
+    if(i>0 && (w===0||w===6||rnd()<.12)) continue; // 土日と、ときどき休館
     const askDay = i===1 && jst.getUTCHours()>=15; // 前日15時の締切を過ぎた明日は「WEB受付は終了」
     const cap=2, staff=rnd()<.3?"亀田・非常勤アドバイザー":"赤坂・亀田", away=days.length===1, early=days.length===2; // 2日目は「亀田 15:00-16:00 不在」、3日目は「16:30閉館」の例
-    days.push({date:ymd(d), w:WD[w], staff, note:away?"亀田は15:00〜16:00不在":"", consult:times.map(t=>{ const out=away&&(t==="15:00"||t==="15:30"); const c=out?1:cap; const used=Math.min(c, rnd()<.35?Math.floor(rnd()*3):0); if(early && t==="16:30") return {time:t,cap:0,left:0,staff}; return {time:t,cap:c,left:c-used,staff:out?staff.replace(/・?亀田・?/,""):staff}; }), place:{cap:4,left:Math.floor(rnd()*5)}, close:early?"16:30":"", closeNote:early?"この日は16:30閉館です":"", placeLast:early?"15:30":"16:00", ask:askDay, nowMin:-1});
+    days.push({date:ymd(d), w:WD[w], staff, note:away?"亀田は15:00〜16:00不在":"", consult:times.map(t=>{ const out=away&&(t==="15:00"||t==="15:30"); const c=out?1:cap; const used=Math.min(c, rnd()<.35?Math.floor(rnd()*3):0); if(early && t==="16:30") return {time:t,cap:0,left:0,staff}; return {time:t,cap:c,left:c-used,staff:out?staff.replace(/・?亀田・?/,""):staff}; }), place:{cap:4,left:Math.floor(rnd()*5)}, close:early?"16:30":"", closeNote:early?"この日は16:30閉館です":"", placeLast:early?"15:30":"16:00", ask:askDay, nowMin:i===0?jst.getUTCHours()*60+jst.getUTCMinutes()-30:-1});
   }
   const ok=x=>new Promise(r=>setTimeout(()=>r(x),250));
   return {
@@ -530,7 +533,7 @@ function renderDays(){
   box.replaceChildren(blocked ? el("div",{className:"limitnote",textContent:`相談の予約は、同時に${limit}件までです。いま${mine}件入っています。1件終わるか、キャンセルすると次の予約ができます。`}) : "", ...list.map(d=>{
     let sum, chips;
     // 締切を過ぎた日（明日・今日）：空きの様子だけ見せて、時間は押せない。LINEでの問い合わせにつなぐ
-    const ask=!!d.ask, later=t=>!ask || d.nowMin<0 || toMin(t)>d.nowMin;
+    const ask=!!d.ask, later=t=>d.nowMin<0 || toMin(t)>d.nowMin; // 今日は、もう始まった枠を出さない
     if(k==="相談"){
       const open=d.consult.reduce((n,s)=>n+s.left,0);
       // 日ごとの空きは数を出さず、ことばで見せる（「空き16」だとがら空きに見えるため）
@@ -651,6 +654,7 @@ function setTestbar(){
   if(!DATA) return;
   const tb=$("#testbar");
   if(DATA.demo){ tb.textContent="お試しモード：仮のデータで動いています。予約しても実際には登録されません。"; tb.hidden=false; }
+  else if(WALKIN){ tb.textContent="当日受付：今日の時間も予約できます"; tb.hidden=false; }
   else if(DATA.test){ tb.textContent=ID_TOKEN?"テスト版：LINEのアカウントで本人を確認しています（スタッフの試し用）":"テスト版：この端末を1人の利用者として扱っています"; tb.hidden=false; }
 }
 function showSlots(s){
@@ -675,7 +679,7 @@ function loadMe(){
   }).catch(()=>{}).finally(()=>{ ME_READY=true; meDone(); });
 }
 function load(){
-  return Promise.all([API.get({action:"slots"}).then(showSlots).catch(slotsFail), loadMe()]);
+  return Promise.all([API.get(WALKIN?{action:"slots",walkin:"1"}:{action:"slots"}).then(showSlots).catch(slotsFail), loadMe()]);
 }
 
 // ---- 2. 確認・入力 ----
@@ -782,7 +786,7 @@ $("#cForm").addEventListener("submit", async e=>{
   if(!tp.ok || !pr.ok || !agreed){ const bad=document.querySelector("#cForm .q.bad"); if(bad) bad.scrollIntoView({behavior:"smooth",block:"center"}); return; }
   const btn=$("#cSend"), err=$("#cErr"); sending=true; btn.disabled=true; btn.textContent="予約しています…"; err.hidden=true;
   try{
-    const r=await API.post({action:"reserve", ...who(), date:PICK.date, time:PICK.time, kind:PICK.kind, memo:$("#memo").value, profile:pr.profile, ...tp.v});
+    const r=await API.post({action:"reserve", walkin:WALKIN, ...who(), date:PICK.date, time:PICK.time, kind:PICK.kind, memo:$("#memo").value, profile:pr.profile, ...tp.v});
     if(!r.ok){
       if(r.needProfile){ ME.registered=false; renderProfile(); }
       err.textContent=r.error||"予約できませんでした。"; err.hidden=false; err.scrollIntoView({behavior:"smooth",block:"center"});
@@ -849,7 +853,7 @@ $("#mBack").onclick=()=>show("home");
 $("#cBack").onclick=()=>show("home");
 $("#dHome").onclick=()=>show("home");
 
-const FIRST_SLOTS = API.get({action:"slots"}).then(showSlots).catch(slotsFail);
+const FIRST_SLOTS = API.get(WALKIN?{action:"slots",walkin:"1"}:{action:"slots"}).then(showSlots).catch(slotsFail);
 startLine().then(go=>{ if(go) loadMe(); }).catch(()=>{
   LINE_NG=true;
   const n=$("#notice"); n.textContent="LINEでの確認ができませんでした。LINEのトーク画面のメニューから、もう一度開いてください。"; n.hidden=false;
