@@ -226,6 +226,26 @@ button{font:inherit;color:inherit}
 .chip.askchip{cursor:default;opacity:.75}
 .askbtn{justify-self:start;display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--accent);color:var(--accent);background:transparent;border-radius:999px;padding:6px 16px;font-size:13px;font-weight:700;text-decoration:none}
 .closenote{margin:0;justify-self:start;font-size:12px;font-weight:700;color:var(--mark-ink);background:var(--mark-soft);border-radius:8px;padding:2px 10px}
+/* 月ごとのまとまり（タップで開け閉め） */
+.mon{display:grid;gap:12px}
+.mon > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:12px 16px;font-weight:700;font-size:15px;letter-spacing:.04em}
+.mon > summary::-webkit-details-marker{display:none}
+.mon > summary .cnt{font-size:12px;font-weight:700;color:var(--muted)}
+.mon > summary .tag{font-size:11px;font-weight:700;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:1px 9px}
+.mon > summary .arw{margin-left:auto;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.mon > summary .arw::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .2s}
+.mon[open] > summary .arw::after{transform:rotate(225deg) translate(-2px,0)}
+.mon[open] > summary{border-color:var(--accent)}
+.mon > .mdays{display:grid;gap:12px}
+/* 延長開館の日 */
+.dnum .cl.ext{color:var(--ok);background:var(--ok-soft)}
+/* 特別な日（開館日シートの「お知らせ」） */
+.day.special{border:1.5px solid #e0a3a3;background:linear-gradient(135deg,#fff7f2 0%,var(--surface) 45%);position:relative;overflow:hidden}
+.day.special::after{content:"✦ ✧ ✦";position:absolute;top:6px;right:12px;font-size:11px;letter-spacing:2px;color:#d9a441;pointer-events:none}
+.info{justify-self:start;display:inline-flex;align-items:center;gap:6px;margin:0;font-size:13px;font-weight:700;line-height:1.5;color:#9b2c2c;background:linear-gradient(90deg,#fde8e8,#fff3d6);border:1px dashed #e0a3a3;border-radius:10px;padding:4px 12px}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .day.special{background:linear-gradient(135deg,#3a2622 0%,var(--surface) 45%);border-color:#7a4a4a} :root:not([data-theme="light"]) .info{color:#ffd0c8;background:linear-gradient(90deg,#4a2a2a,#4a3a1e);border-color:#7a4a4a} }
+:root[data-theme="dark"] .day.special{background:linear-gradient(135deg,#3a2622 0%,var(--surface) 45%);border-color:#7a4a4a}
+:root[data-theme="dark"] .info{color:#ffd0c8;background:linear-gradient(90deg,#4a2a2a,#4a3a1e);border-color:#7a4a4a}
 /* スクロールで、ふわっと出す */
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .5s ease, transform .5s ease}
 .reveal.in{opacity:1;transform:none}
@@ -476,13 +496,18 @@ function demoApi(){
   const jst=new Date(Date.now()+9*3600e3), start=new Date(Date.UTC(jst.getUTCFullYear(),jst.getUTCMonth(),jst.getUTCDate()));
   const days=[], rsv=[]; let user=DEMO_RETURNING?{name:"テスト 花子"}:null, seed=7, reflected=false;
   const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
-  for(let i=WALKIN?0:1;i<=28;i++){ // 当日受付のお試しでは、今日も出す
+  const lastDay=Math.round((Date.UTC(jst.getUTCFullYear(),jst.getUTCMonth()+2,0)-start.getTime())/864e5); // 来月の末日まで
+  for(let i=WALKIN?0:1;i<=Math.max(28,lastDay);i++){ // 当日受付のお試しでは、今日も出す
     const d=new Date(start.getTime()+i*864e5), w=d.getUTCDay();
     if(i>0 && (w===0||w===6||rnd()<.12)) continue; // 土日と、ときどき休館
     const askDay = i===1 && jst.getUTCHours()>=15; // 前日15時の締切を過ぎた明日は「WEB受付は終了」
     const cap=2, staff=rnd()<.3?"亀田・非常勤アドバイザー":"赤坂・亀田", away=days.length===1, early=days.length===2; // 2日目は「亀田 15:00-16:00 不在」、3日目は「16:30閉館」の例
-    days.push({date:ymd(d), w:WD[w], staff, note:away?"亀田は15:00〜16:00不在":"", consult:times.map(t=>{ const out=away&&(t==="15:00"||t==="15:30"); const c=out?1:cap; const used=Math.min(c, rnd()<.35?Math.floor(rnd()*3):0); if(early && t==="16:30") return {time:t,cap:0,left:0,staff}; return {time:t,cap:c,left:c-used,staff:out?staff.replace(/・?亀田・?/,""):staff}; }), place:{cap:4,left:Math.floor(rnd()*5)}, close:early?"16:30":"", closeNote:early?"この日は16:30閉館です":"", placeLast:early?"15:30":"16:00", ask:askDay, nowMin:i===0?jst.getUTCHours()*60+jst.getUTCMinutes()-30:-1});
+    days.push({date:ymd(d), w:WD[w], staff, note:away?"亀田は15:00〜16:00不在":"", consult:times.map(t=>{ const out=away&&(t==="15:00"||t==="15:30"); const c=out?1:cap; const used=Math.min(c, rnd()<.35?Math.floor(rnd()*3):0); if(early && t==="16:30") return {time:t,cap:0,left:0,staff}; return {time:t,cap:c,left:c-used,staff:out?staff.replace(/・?亀田・?/,""):staff}; }), place:{cap:4,left:Math.floor(rnd()*5)}, close:early?"16:30":"", closeNote:early?"この日は16:30閉館です":"", placeLast:early?"15:30":"16:00", ask:askDay, nowMin:i===0?jst.getUTCHours()*60+jst.getUTCMinutes()-30:-1, info:""});
+    const dd=days[days.length-1];
+    if(days.length===4){ dd.close="18:00"; dd.closeNote="この日は18:00まで延長開館です"; dd.placeLast="17:00"; dd.consult.push({time:"17:00",cap:2,left:2,staff}); } // 4日目は「18:00まで延長」の例
+    if(d.getUTCMonth()!==start.getUTCMonth() && d.getUTCDate()>=20 && !days.some(x=>x.info)) dd.info="🎄クリスマスのお菓子あり"; // 来月の20日以降の最初の日は「お知らせ」の例
   }
+  times.push("17:00");
   const ok=x=>new Promise(r=>setTimeout(()=>r(x),250));
   return {
     get: q => q.action==="me" ? ok({ok:true,registered:!!user,name:user?user.name:"",reservations:rsv.filter(r=>r.active),history:user?[{date:"2026/10/19",time:"13:00",kind:"相談",topic1:"面接練習",topic2:"ES作成"},{date:"2026/10/12",time:"14:30",kind:"相談",topic1:"ES作成",topic2:"面接練習"},{date:"2026/10/05",time:"15:00",kind:"場所利用"}]:[],visits:user?3:0,lastStaff:user?"亀田":"",reflect:user&&!reflected?[{id:"demo",date:days[0].date,time:"13:00",topic1:"ES作成",topic2:"面接練習"}]:[]}) : ok({ok:true,days,times,deadline:"15:00",demo:true}),
@@ -530,7 +555,7 @@ function renderDays(){
   // 相談は、これからの予約を同時に consultLimit 件まで。上限のときは先に知らせて、時間を選べないようにする
   const limit=DATA.consultLimit||0, mine=(ME.reservations||[]).filter(r=>r.kind==="相談").length;
   const blocked = k==="相談" && limit>0 && mine>=limit;
-  box.replaceChildren(blocked ? el("div",{className:"limitnote",textContent:`相談の予約は、同時に${limit}件までです。いま${mine}件入っています。1件終わるか、キャンセルすると次の予約ができます。`}) : "", ...list.map(d=>{
+  const cards=list.map(d=>{
     let sum, chips;
     // 締切を過ぎた日（明日・今日）：空きの様子だけ見せて、時間は押せない。LINEでの問い合わせにつなぐ
     const ask=!!d.ask, later=t=>d.nowMin<0 || toMin(t)>d.nowMin; // 今日は、もう始まった枠を出さない
@@ -558,18 +583,34 @@ function renderDays(){
       });
     }
     const [,mm,dd]=d.date.split("/").map(Number);
-    const card=el("div",{className:"day reveal"},[
-      el("div",{className:"dnum"+(d.w==="土"?" sat":""),"aria-hidden":"true"},[el("span",{className:"m",textContent:mm+"月"}),el("span",{className:"d",textContent:dd}),el("span",{className:"w",textContent:d.w+"曜"}), d.close ? el("span",{className:"cl"},[el("b",{textContent:d.close}),"閉館"]) : null].filter(Boolean)),
+    const card=el("div",{className:"day reveal"+(d.info?" special":"")},[
+      el("div",{className:"dnum"+(d.w==="土"?" sat":""),"aria-hidden":"true"},[el("span",{className:"m",textContent:mm+"月"}),el("span",{className:"d",textContent:dd}),el("span",{className:"w",textContent:d.w+"曜"}), d.close ? (toMin(d.close)>toMin("17:00") ? el("span",{className:"cl ext"},["延長",el("b",{textContent:d.close}),"まで"]) : el("span",{className:"cl"},[el("b",{textContent:d.close}),"閉館"])) : null].filter(Boolean)),
       el("div",{className:"dbody"},[
         el("div",{className:"dh"},[el("p",{className:"staff"},[el("span",{className:"sr",textContent:dateLabel(d.date,d.w)+" "}), k==="相談" && d.staff?"担当："+d.staff+(d.note?`（${d.note}）`:""):""]), sum]), // スペース使用では担当を出さない
+        d.info ? el("p",{className:"info",textContent:d.info}) : null,
         ask ? el("p",{className:"asknote",textContent:"空きがあれば来館できることがあります。LINEでお問い合わせください。"}) : null,
         el("div",{className:"chips"},chips),
         ask ? el("a",{className:"askbtn",href:"https://line.me/R/oaMessage/@campusadd/?"+encodeURIComponent(`${mm}/${dd}（${d.w}）の来館について問い合わせです。`),textContent:"LINEで問い合わせる"}) : null
       ])
     ]);
     return card;
-  }));
+  });
+  // 月ごとにまとめて、タップで開け閉めできるように（最初の月だけ開いておく）
+  const months=[];
+  list.forEach((d,i)=>{ const ym=d.date.slice(0,7); let m=months.find(x=>x.ym===ym); if(!m){ m={ym,cards:[]}; months.push(m); } m.cards.push(cards[i]); });
+  const groups=months.length<2 ? cards : months.map((m,i)=>{
+    const mo=Number(m.ym.slice(5,7)), isOpen = OPENMON.has(m.ym) || (!OPENMON.size && i===0);
+    const det=el("details",{className:"mon"},[
+      el("summary",{},[el("span",{textContent:mo+"月の開館日"}), i>0 ? el("span",{className:"tag",textContent:"予約受付中"}) : null, el("span",{className:"arw",textContent:isOpen?"閉じる":"ひらく"})].filter(Boolean)),
+      el("div",{className:"mdays"},m.cards)
+    ]);
+    det.open=isOpen;
+    det.addEventListener("toggle",()=>{ if(det.open) OPENMON.add(m.ym); else OPENMON.delete(m.ym); if(!OPENMON.size) OPENMON.add("-"); det.querySelector(".arw").textContent=det.open?"閉じる":"ひらく"; if(det.open) reveal(); });
+    return det;
+  });
+  box.replaceChildren(blocked ? el("div",{className:"limitnote",textContent:`相談の予約は、同時に${limit}件までです。いま${mine}件入っています。1件終わるか、キャンセルすると次の予約ができます。`}) : "", ...groups);
 }
+const OPENMON=new Set(); // 開いている月（相談／スペースを切り替えても、開け閉めをそのままに）
 document.querySelectorAll('input[name="kind"]').forEach(r=>r.addEventListener("change",()=>{ renderDays(); reveal(); }));
 
 // ---- 5. 振り返り（相談した日のあと） ----
