@@ -238,7 +238,8 @@ button{font:inherit;color:inherit}
 .mon[open] > summary{border-color:var(--accent)}
 .mon > .mdays{display:grid;gap:12px}
 /* 延長開館の日 */
-.dnum .cl.ext{color:var(--ok);background:var(--ok-soft)}
+.dnum .cl.ext{color:#fff;background:#3a4f9a;padding:3px 4px}
+.dnum .cl.ext b{color:#ffe58a}
 /* 特別な日（開館日シートの「お知らせ」） */
 .day.special{border:1.5px solid #e0a3a3;background:linear-gradient(135deg,#fff7f2 0%,var(--surface) 45%);position:relative;overflow:hidden}
 .day.special::after{content:"✦ ✧ ✦";position:absolute;top:6px;right:12px;font-size:11px;letter-spacing:2px;color:#d9a441;pointer-events:none}
@@ -246,6 +247,25 @@ button{font:inherit;color:inherit}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .day.special{background:linear-gradient(135deg,#3a2622 0%,var(--surface) 45%);border-color:#7a4a4a} :root:not([data-theme="light"]) .info{color:#ffd0c8;background:linear-gradient(90deg,#4a2a2a,#4a3a1e);border-color:#7a4a4a} }
 :root[data-theme="dark"] .day.special{background:linear-gradient(135deg,#3a2622 0%,var(--surface) 45%);border-color:#7a4a4a}
 :root[data-theme="dark"] .info{color:#ffd0c8;background:linear-gradient(90deg,#4a2a2a,#4a3a1e);border-color:#7a4a4a}
+/* クリスマスの日（お知らせに「クリスマス」🎄⛄🎅 などがあるとき） */
+.day.xmas{border:1.5px solid #c9a35a;background:
+  radial-gradient(circle at 12% 18%,rgba(255,255,255,.95) 0 2px,transparent 3px),
+  radial-gradient(circle at 38% 8%,rgba(255,255,255,.9) 0 1.5px,transparent 2.5px),
+  radial-gradient(circle at 62% 14%,rgba(255,255,255,.95) 0 2px,transparent 3px),
+  radial-gradient(circle at 80% 30%,rgba(255,255,255,.9) 0 1.5px,transparent 2.5px),
+  radial-gradient(circle at 25% 60%,rgba(255,255,255,.85) 0 1.5px,transparent 2.5px),
+  radial-gradient(circle at 92% 70%,rgba(255,255,255,.9) 0 2px,transparent 3px),
+  linear-gradient(160deg,#eaf3ee 0%,#fbf4ec 55%,#fdf0ee 100%);padding-top:20px}
+.day.xmas::after{content:none}
+.day.xmas::before{content:"";position:absolute;left:0;right:0;top:0;height:7px;background:repeating-linear-gradient(135deg,#c0392b 0 10px,#fff 10px 20px,#2e7d4f 20px 30px,#fff 30px 40px)}
+.xdeco{position:absolute;pointer-events:none}
+.xdeco.wreath{top:12px;right:10px;width:46px;height:46px}
+.xdeco.snowman{left:12px;bottom:8px;width:34px;height:44px}
+.day.xmas .dbody{padding-right:44px}
+.day.xmas .dnum{padding-bottom:50px}
+.day.xmas .info{color:#fff;background:linear-gradient(90deg,#b8322a,#d4553c);border:none;box-shadow:0 4px 12px -6px rgba(150,30,20,.6)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .day.xmas{background:linear-gradient(160deg,#1d2e25 0%,#2a2420 60%,#2e2020 100%);border-color:#7a6230} }
+:root[data-theme="dark"] .day.xmas{background:linear-gradient(160deg,#1d2e25 0%,#2a2420 60%,#2e2020 100%);border-color:#7a6230}
 /* スクロールで、ふわっと出す */
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .5s ease, transform .5s ease}
 .reveal.in{opacity:1;transform:none}
@@ -583,7 +603,8 @@ function renderDays(){
       });
     }
     const [,mm,dd]=d.date.split("/").map(Number);
-    const card=el("div",{className:"day reveal"+(d.info?" special":"")},[
+    const xmas=/クリスマス|🎄|⛄|☃|🎅|🎁|Xmas|X'mas|Christmas/i.test(d.info||"");
+    const card=el("div",{className:"day reveal"+(d.info?" special":"")+(xmas?" xmas":"")},[
       el("div",{className:"dnum"+(d.w==="土"?" sat":""),"aria-hidden":"true"},[el("span",{className:"m",textContent:mm+"月"}),el("span",{className:"d",textContent:dd}),el("span",{className:"w",textContent:d.w+"曜"}), d.close ? (toMin(d.close)>toMin("17:00") ? el("span",{className:"cl ext"},["延長",el("b",{textContent:d.close}),"まで"]) : el("span",{className:"cl"},[el("b",{textContent:d.close}),"閉館"])) : null].filter(Boolean)),
       el("div",{className:"dbody"},[
         el("div",{className:"dh"},[el("p",{className:"staff"},[el("span",{className:"sr",textContent:dateLabel(d.date,d.w)+" "}), k==="相談" && d.staff?"担当："+d.staff+(d.note?`（${d.note}）`:""):""]), sum]), // スペース使用では担当を出さない
@@ -593,6 +614,7 @@ function renderDays(){
         ask ? el("a",{className:"askbtn",href:"https://line.me/R/oaMessage/@campusadd/?"+encodeURIComponent(`${mm}/${dd}（${d.w}）の来館について問い合わせです。`),textContent:"LINEで問い合わせる"}) : null
       ])
     ]);
+    if(xmas) card.insertAdjacentHTML("beforeend", XMAS_DECO);
     return card;
   });
   // 月ごとにまとめて、タップで開け閉めできるように（最初の月だけ開いておく）
@@ -610,6 +632,17 @@ function renderDays(){
   });
   box.replaceChildren(blocked ? el("div",{className:"limitnote",textContent:`相談の予約は、同時に${limit}件までです。いま${mine}件入っています。1件終わるか、キャンセルすると次の予約ができます。`}) : "", ...groups);
 }
+// クリスマスの飾り（リースと雪だるま）
+const XMAS_DECO = '<svg class="xdeco wreath" viewBox="0 0 48 48" aria-hidden="true">'
+  + [0,30,60,90,120,150,180,210,240,270,300,330].map((a,i)=>{ const r=a*Math.PI/180, x=24+15*Math.cos(r), y=24+15*Math.sin(r); return '<ellipse cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" rx="6.5" ry="4" transform="rotate('+(a+90)+' '+x.toFixed(1)+' '+y.toFixed(1)+')" fill="'+(i%2?"#2e7d4f":"#3f9a62")+'"/>'; }).join("")
+  + '<circle cx="12" cy="20" r="2.2" fill="#d23a2c"/><circle cx="34" cy="11" r="2.2" fill="#d23a2c"/><circle cx="38" cy="31" r="2.2" fill="#d23a2c"/><circle cx="20" cy="38" r="2.2" fill="#d23a2c"/>'
+  + '<path d="M24 37 l-7 7 l2 -9 z M24 37 l7 7 l-2 -9 z" fill="#c0392b"/><path d="M24 37 c-6 -6 -11 -2 -8 2 c2 3 6 1 8 -2 z M24 37 c6 -6 11 -2 8 2 c-2 3 -6 1 -8 -2 z" fill="#e04a3a"/><circle cx="24" cy="37" r="2.4" fill="#a82a20"/></svg>'
+  + '<svg class="xdeco snowman" viewBox="0 -4 34 48" aria-hidden="true">'
+  + '<circle cx="17" cy="31" r="11" fill="#fff" stroke="#c9d6dd" stroke-width="1"/><circle cx="17" cy="14" r="8" fill="#fff" stroke="#c9d6dd" stroke-width="1"/>'
+  + '<rect x="9" y="3" width="16" height="3" rx="1" fill="#2b2b2b"/><rect x="12" y="-3" width="10" height="7" rx="1" fill="#2b2b2b"/>'
+  + '<circle cx="14" cy="13" r="1.1" fill="#2b2b2b"/><circle cx="20" cy="13" r="1.1" fill="#2b2b2b"/><path d="M17 15 l5 1.5 l-5 1 z" fill="#f08a24"/>'
+  + '<path d="M9 21 q8 4 16 0 l0 3 q-8 4 -16 0 z" fill="#c0392b"/><rect x="21" y="22" width="3" height="7" rx="1" fill="#c0392b"/>'
+  + '<circle cx="17" cy="28" r="1.1" fill="#2b2b2b"/><circle cx="17" cy="33" r="1.1" fill="#2b2b2b"/></svg>';
 const OPENMON=new Set(); // 開いている月（相談／スペースを切り替えても、開け閉めをそのままに）
 document.querySelectorAll('input[name="kind"]').forEach(r=>r.addEventListener("change",()=>{ renderDays(); reveal(); }));
 
