@@ -259,9 +259,10 @@ button{font:inherit;color:inherit}
 .day.xmas::after{content:none}
 .day.xmas::before{content:"";position:absolute;left:0;right:0;top:0;height:7px;background:repeating-linear-gradient(135deg,#c0392b 0 10px,#fff 10px 20px,#2e7d4f 20px 30px,#fff 30px 40px)}
 .xdeco{position:absolute;pointer-events:none}
-.xdeco.wreath{top:12px;right:10px;width:46px;height:46px}
+.xdeco.wreath{top:12px;right:8px;width:34px;height:34px}
 .xdeco.snowman{left:12px;bottom:8px;width:34px;height:44px}
-.day.xmas .dbody{padding-right:44px}
+.day.xmas .dbody .staff{padding-right:30px}
+.day.xmas .info{font-size:12.5px;padding:4px 10px;letter-spacing:0}
 .day.xmas .dnum{padding-bottom:50px}
 .day.xmas .info{color:#fff;background:linear-gradient(90deg,#b8322a,#d4553c);border:none;box-shadow:0 4px 12px -6px rgba(150,30,20,.6)}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .day.xmas{background:linear-gradient(160deg,#1d2e25 0%,#2a2420 60%,#2e2020 100%);border-color:#7a6230} }
@@ -605,7 +606,7 @@ function renderDays(){
     const [,mm,dd]=d.date.split("/").map(Number);
     const xmas=/クリスマス|🎄|⛄|☃|🎅|🎁|Xmas|X'mas|Christmas/i.test(d.info||"");
     const card=el("div",{className:"day reveal"+(d.info?" special":"")+(xmas?" xmas":"")},[
-      el("div",{className:"dnum"+(d.w==="土"?" sat":""),"aria-hidden":"true"},[el("span",{className:"m",textContent:mm+"月"}),el("span",{className:"d",textContent:dd}),el("span",{className:"w",textContent:d.w+"曜"}), d.close ? (toMin(d.close)>toMin("17:00") ? el("span",{className:"cl ext"},["延長",el("b",{textContent:d.close}),"まで"]) : el("span",{className:"cl"},[el("b",{textContent:d.close}),"閉館"])) : null].filter(Boolean)),
+      el("div",{className:"dnum"+(d.w==="土"?" sat":""),"aria-hidden":"true"},[el("span",{className:"m",textContent:mm+"月"}),el("span",{className:"d",textContent:dd}),el("span",{className:"w",textContent:d.w+"曜"}), (d.close && d.closeNote) ? (toMin(d.close)>toMin("17:00") ? el("span",{className:"cl ext"},["延長",el("b",{textContent:d.close}),"まで"]) : el("span",{className:"cl"},[el("b",{textContent:d.close}),"閉館"])) : null].filter(Boolean)),
       el("div",{className:"dbody"},[
         el("div",{className:"dh"},[el("p",{className:"staff"},[el("span",{className:"sr",textContent:dateLabel(d.date,d.w)+" "}), k==="相談" && d.staff?"担当："+d.staff+(d.note?`（${d.note}）`:""):""]), sum]), // スペース使用では担当を出さない
         d.info ? el("p",{className:"info",textContent:d.info}) : null,
