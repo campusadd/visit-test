@@ -172,14 +172,11 @@ button{font:inherit;color:inherit}
 .cdlg form{display:grid;gap:12px;padding:20px 18px 18px;margin:0}
 .cdlg h3{margin:0;font-size:17px;line-height:1.5}
 .cdlg .when{margin:-6px 0 0;font-size:13px;color:var(--muted)}
-.cdlg .rs{display:grid;gap:6px}
-.cdlg .rs label{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:9px 12px;font-size:14px;line-height:1.5;cursor:pointer}
-.cdlg .rs input{width:18px;height:18px;margin:0;flex:none;accent-color:var(--danger)}
-.cdlg .rs label:has(input:checked){border-color:var(--danger);box-shadow:0 0 0 1px var(--danger)}
-.cdlg textarea{width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;resize:vertical;min-height:56px}
+.cdlg .ask{margin:4px 0 -4px;font-size:14px;font-weight:700}
+.cdlg textarea{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical;min-height:84px}
 .cdlg .err{margin:0;color:var(--danger);font-size:13px;font-weight:700}
-.cdlg .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
-.cdlg .btns button{border-radius:999px;padding:11px 10px;font-size:14px;font-weight:700;cursor:pointer}
+.cdlg .btns{display:grid;grid-template-columns:1fr 1.7fr;gap:8px;margin-top:4px}
+.cdlg .btns button{border-radius:999px;padding:11px 8px;font-size:14px;font-weight:700;letter-spacing:.02em;white-space:nowrap;cursor:pointer}
 .cdlg .no{border:1.5px solid var(--line);background:transparent}
 .cdlg .yes{border:1.5px solid var(--danger);background:var(--danger);color:var(--bg)}
 .cdlg .yes[disabled]{opacity:.6;cursor:wait}
@@ -938,32 +935,29 @@ function renderMine(){
     return el("div",{className:"rsv"},[el("div",{},[el("b",{textContent:dateLabel(r.date,wOf(r.date))+" "+r.time}), el("small",{textContent:r.kind==="相談"?"キャンアドで相談":"スペース使用"})]), btn]);
   }));
 }
-// キャンセルの理由を選んでもらってからキャンセルする（管理表のスクリプトにも同じ一覧がある）
-const CANCEL_REASONS=["体調が悪い","授業・ゼミ・課題","面接・説明会など選考の予定が入った","アルバイト","予定を間違えて予約した","その他"];
+// キャンセルの理由を書いてもらってから予約をキャンセルする（選択肢だと適当に選ぶので、自分の言葉で書いてもらう）
 function askCancel(r){
   const when=dateLabel(r.date,wOf(r.date))+" "+r.time+"（"+(r.kind==="相談"?"キャンアドで相談":"スペース使用")+"）";
-  const other=el("textarea",{name:"text",maxLength:100,placeholder:"理由をひとこと書いてください",hidden:true});
+  const text=el("textarea",{name:"text",maxLength:100,rows:3,placeholder:"例：面接の日程と重なったため"});
   const err=el("p",{className:"err",hidden:true});
-  const yes=el("button",{type:"submit",className:"yes",textContent:"キャンセルする"});
+  const yes=el("button",{type:"submit",className:"yes",textContent:"キャンセルを確定する"});
   const no=el("button",{type:"button",className:"no",textContent:"やめる"});
-  const rs=el("div",{className:"rs"},CANCEL_REASONS.map(k=>el("label",{},[el("input",{type:"radio",name:"reason",value:k}),el("span",{textContent:k==="その他"?"その他（ひとこと書いてください）":k})])));
-  const form=el("form",{},[el("h3",{textContent:"キャンセルの理由を教えてください"}),el("p",{className:"when",textContent:when}),rs,other,err,el("div",{className:"btns"},[no,yes])]);
+  const form=el("form",{},[el("h3",{textContent:"この予約をキャンセルします"}),el("p",{className:"when",textContent:when}),el("p",{className:"ask",textContent:"キャンセルの理由を教えてください"}),text,err,el("div",{className:"btns"},[no,yes])]);
   const dlg=el("dialog",{className:"cdlg"},[form]);
   document.body.append(dlg);
   const close=()=>{ dlg.close(); dlg.remove(); };
-  rs.addEventListener("change",()=>{ const v=form.reason.value; other.hidden=v!=="その他"; err.hidden=true; if(v==="その他") other.focus(); });
+  text.addEventListener("input",()=>{ err.hidden=true; });
   no.onclick=close;
   // 端末の「戻る」やEscで閉じたとき（処理中は閉じない）
   dlg.addEventListener("cancel",e=>{ e.preventDefault(); if(!yes.disabled) close(); });
   form.onsubmit=async e=>{
     e.preventDefault();
-    const reason=form.reason.value, text=other.value.trim();
+    const t=text.value.trim();
     const say=m=>{ err.textContent=m; err.hidden=false; };
-    if(!reason) return say("理由を1つ選んでください。");
-    if(reason==="その他" && !text){ other.focus(); return say("「その他」を選んだときは、理由をひとこと書いてください。"); }
+    if(!t){ text.focus(); return say("キャンセルの理由を書いてください。"); }
     yes.disabled=true; no.disabled=true; yes.textContent="処理中…";
-    try{ const x=await API.post({action:"cancel",...who(),id:r.id,reason,reasonText:reason==="その他"?text:""}); if(!x.ok) throw new Error(x.error); close(); await load(); renderMine(); }
-    catch(e2){ say(e2.message||"キャンセルできませんでした。LINEでご連絡ください。"); yes.disabled=false; no.disabled=false; yes.textContent="キャンセルする"; }
+    try{ const x=await API.post({action:"cancel",...who(),id:r.id,reason:"記述",reasonText:t}); if(!x.ok) throw new Error(x.error); close(); await load(); renderMine(); }
+    catch(e2){ say(e2.message||"キャンセルできませんでした。LINEでご連絡ください。"); yes.disabled=false; no.disabled=false; yes.textContent="キャンセルを確定する"; }
   };
   dlg.showModal();
 }
